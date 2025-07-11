@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ラーメン占い</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #fce4ec; /* 淡いピンク */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    color: #4a4a4a;
+    line-height: 1.6;
+  }
+  .container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    padding: 35px 45px;
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  h1 {
+    color: #d84315; /* ラーメンの赤っぽい色 */
+    margin-bottom: 25px;
+    font-size: 2.2em;
+    font-weight: 700;
+  }
+  .question-section {
+    margin-bottom: 30px;
+    text-align: left;
+  }
+  .question-section p {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #333;
+  }
+  .question-section label {
+    display: block;
+    background-color: #fff3e0; /* クリーム色 */
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    border: 1px solid #ffcc80;
+  }
+  .question-section label:hover {
+    background-color: #ffe0b2;
+    transform: translateY(-2px);
+  }
+  .question-section input[type="radio"] {
+    margin-right: 12px;
+    transform: scale(1.2);
+  }
+  button {
+    background-color: #ff9800; /* オレンジ */
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 1.3em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-weight: 600;
+    margin-top: 20px;
+  }
+  button:hover {
+    background-color: #fb8c00;
+    transform: translateY(-2px);
+  }
+  #result {
+    margin-top: 30px;
+    font-size: 1.3em;
+    font-weight: 500;
+    color: #d84315;
+    background-color: #fffde7;
+    border: 2px dashed #ffab40;
+    padding: 20px;
+    border-radius: 10px;
+    display: none; /* 初期は非表示 */
+  }
+  #resultType {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: #c62828;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🍜 ラーメン占い 🍜</h1>
+
+  <div class="question-section">
+    <p>Q1: 好きなラーメンのスープの味は？</p>
+    <label>
+      <input type="radio" name="q1" value="shoyu"> 醤油ベース
+    </label>
+    <label>
+      <input type="radio" name="q1" value="miso"> 味噌ベース
+    </label>
+    <label>
+      <input type="radio" name="q1" value="tonkotsu"> 豚骨ベース
+    </label>
+  </div>
+
+  <div class="question-section">
+    <p>Q2: 麺の硬さは？</p>
+    <label>
+      <input type="radio" name="q2" value="hard"> バリカタ！
+    </label>
+    <label>
+      <input type="radio" name="q2" value="normal"> ふつうが一番
+    </label>
+    <label>
+      <input type="radio" name="q2" value="soft"> やわらかめが好き
+    </label>
+  </div>
+
+  <button onclick="diagnose()">診断する！</button>
+
+  <div id="result">
+    <div id="resultType"></div>
+    <div id="resultDescription"></div>
+  </div>
+</div>
+
+<script>
+  function diagnose() {
+    const q1 = document.querySelector('input[name="q1"]:checked');
+    const q2 = document.querySelector('input[name="q2"]:checked');
+
+    if (!q1 || !q2) {
+      alert("すべての質問に答えてください！");
+      return;
+    }
+
+    const type = q1.value + "_" + q2.value;
+    let resultType = "";
+    let resultDescription = "";
+
+    switch (type) {
+      case "shoyu_hard":
+        resultType = "🔥 熱血ストレート麺タイプ 🔥";
+        resultDescription = "あなたは情熱的で、目標に向かって真っ直ぐ進むタイプ。少々頑固な一面もありますが、そのひたむきさが周りを惹きつけます。相性の良い人は、あなたの熱意を理解し、時にはそっと支えてくれる味噌ベースの麺好きさんでしょう。";
+        break;
+      case "shoyu_normal":
+        resultType = "🍜 バランス醤油タイプ 🍜";
+        resultDescription = "あなたは協調性があり、どんな状況にも柔軟に対応できるバランスの取れた人。周囲をよく見て行動し、安定を好みます。どんなタイプの人とも良好な関係を築けますが、特にあなたと同じように落ち着いた豚骨ベースの麺好きさんとの相性が良いでしょう。";
+        break;
+      case "shoyu_soft":
+        resultType = "🌸 繊細あっさり系タイプ 🌸";
+        resultDescription = "あなたは優しく、人の気持ちを大切にする繊細な心の持ち主。争いを嫌い、穏やかな関係を築くことを望みます。包容力のある味噌ベースの麺好きさんや、あなたのペースを尊重してくれる人が相性ぴったりです。";
+        break;
+      case "miso_hard":
+        resultType = "💪 力強い味噌魂タイプ 💪";
+        resultDescription = "あなたはエネルギッシュで、困難にも臆せず立ち向かう強い意志の持ち主。面倒見が良く、リーダーシップを発揮します。あなたの情熱についてこられるストレートな醤油ベースの麺好きさんや、一緒に高みを目指せる人が相性良いでしょう。";
+        break;
+      case "miso_normal":
+        resultType = "🤝 安定の味噌タイプ 🤝";
+        resultDescription = "あなたは人情味があり、周りとの調和を大切にする社交的な人。温かい心で皆をまとめ、信頼を集めます。どんな人とも親しくなれますが、特にあなたの温かさに惹かれる醤油ベースや、一緒に楽しめる人が相性良いでしょう。";
+        break;
+      case "miso_soft":
+        resultType = "☁️ 癒し系まろやかタイプ ☁️";
+        resultDescription = "あなたは癒し系のオーラを放ち、周りを和ませる穏やかな心の持ち主。争いを好まず、相手の意見を尊重します。あなたの優しい雰囲気に包まれたい豚骨ベースの麺好きさんや、のんびりした人が相性良いでしょう。";
+        break;
+      case "tonkotsu_hard":
+        resultType = "🌪️ 濃厚チャレンジャータイプ 🌪️";
+        resultDescription = "あなたは行動力があり、新しいことにも果敢に挑戦する冒険家タイプ。一度決めたら最後までやり遂げる集中力があります。同じように刺激を求める豚骨ベースの麺好きさんや、あなたのユニークな発想についてこられる人が相性良いでしょう。";
+        break;
+      case "tonkotsu_normal":
+        resultType = "😎 クールな豚骨マスタータイプ 😎";
+        resultDescription = "あなたは合理的で、物事を冷静に分析する知的な人。無駄を嫌い、効率を重視します。独立心の強い醤油ベースの麺好きさんや、お互いの時間を尊重し合える関係を築ける人が相性良いでしょう。";
+        break;
+      case "tonkotsu_soft":
+        resultType = "🌙 静かな豚骨ロマンタイプ 🌙";
+        resultDescription = "あなたは内省的で、深い思考を持つ芸術家タイプ。一人の時間を大切にし、じっくりと関係を深めることを好みます。あなたの世界観を理解し、静かに寄り添ってくれる人が相性ぴったりです。特に、優しい味噌ベースの麺好きさんが良いでしょう。";
+        break;
+      default:
+        resultType = "結果不明";
+        resultDescription = "もう一度お試しください。";
+    }
+
+    document.getElementById("resultType").innerText = resultType;
+    document.getElementById("resultDescription").innerText = resultDescription;
+    document.getElementById("result").style.display = "block";
+  }
+</script>
+
+</body>
+</html>
