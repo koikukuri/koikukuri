@@ -106,8 +106,8 @@
 
     <script>
         // --- 設定 ---
-        const LIFF_ID = "YOUR_PROFILE_LIFF_ID"; // ★★★ このアプリ専用の新しいLIFF IDに書き換えてください ★★★
-        const GAS_WEB_APP_URL = "YOUR_SINGLE_GAS_URL"; // 統合版GASのURL
+        const LIFF_ID = "2007667389-LBMOpGMy"; // プロフィール交換アプリのLIFF ID
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzJvYXNwqZhNv8SujSl1J_O4nOCEUOMAWdXNjPWaFFG1obYgLWADuDBQwhECqwWo2QBnw/exec"; // 統合版GASのURL
 
         // --- 要素の取得 ---
         const loadingScreen = document.getElementById('loading-screen');
@@ -118,15 +118,6 @@
 
         // --- メイン処理 ---
         async function main() {
-            if (LIFF_ID === "YOUR_PROFILE_LIFF_ID" || !LIFF_ID) {
-                loadingScreen.innerHTML = '<p class="text-red-600">エラー: LIFF IDが設定されていません。</p>';
-                return;
-            }
-            if (GAS_WEB_APP_URL === "YOUR_SINGLE_GAS_URL" || !GAS_WEB_APP_URL) {
-                loadingScreen.innerHTML = '<p class="text-red-600">エラー: GASのURLが設定されていません。</p>';
-                return;
-            }
-
             try {
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) {
