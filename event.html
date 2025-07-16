@@ -21,21 +21,13 @@
             touch-action: manipulation;
             -webkit-user-select: none; user-select: none;
             -webkit-tap-highlight-color: transparent;
-            background-color: #fdf2f8; /* さらに淡いピンク */
+            background-color: #fdf2f8;
         }
         .like-btn.liked { animation: heart-pop 0.5s forwards; color: #F43F5E; }
         @keyframes heart-pop { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
         .gender-male { color: #3b82f6; }
         .gender-female { color: #ec4899; }
-        .card-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 4rem 1rem; /* カード間の縦のスペースを調整 */
-        }
-        .profile-card {
-            padding-top: 3rem; /* 画像を上に突き出させるためのスペース */
-            margin-top: 3rem;
-        }
+        .profile-comment { white-space: pre-wrap; word-break: break-word; }
     </style>
 </head>
 <body class="text-gray-800">
@@ -46,53 +38,41 @@
     </div>
 
     <!-- ===== メイン画面（参加者一覧） ===== -->
-    <div id="main-screen" class="hidden p-4">
-        <div class="mb-8">
-            <h2 class="text-2xl font-bold text-center text-blue-500 mb-4">男性メンバー</h2>
-            <div id="male-list" class="card-container">
-                <!-- ここに男性参加者カードが動的に挿入されます -->
-            </div>
-        </div>
-        <div class="border-t-2 border-dashed border-pink-300 my-8"></div>
-        <div>
-            <h2 class="text-2xl font-bold text-center text-pink-500 mb-4">女性メンバー</h2>
-            <div id="female-list" class="card-container">
-                <!-- ここに女性参加者カードが動的に挿入されます -->
+    <div id="main-screen" class="hidden p-4 space-y-8">
+        <div id="opposite-gender-section">
+            <h2 id="opposite-gender-title" class="text-2xl font-bold text-center mb-4"></h2>
+            <div id="opposite-gender-list" class="space-y-4">
+                <!-- ここに異性参加者カードが動的に挿入されます -->
             </div>
         </div>
     </div>
 
-    <!-- ===== メッセージ送信モーダル ===== -->
-    <div id="message-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <h2 id="modal-title" class="text-xl font-bold text-center mb-4">メッセージを送る</h2>
-            <div id="message-buttons" class="space-y-3"></div>
-            <button id="modal-close-btn" class="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">とじる</button>
-        </div>
-    </div>
-    
-    <!-- 参加者カードのテンプレート -->
+    <!-- ===== 参加者カードのテンプレート ===== -->
     <template id="participant-card-template">
-        <div class="relative">
-            <div class="profile-card bg-white rounded-xl shadow-lg p-4 flex flex-col text-center space-y-1">
-                <img class="profile-img w-24 h-24 rounded-full object-cover border-4 border-white shadow-md mx-auto absolute -top-12 left-1/2 -translate-x-1/2" src="" alt="プロフィール画像">
-                <div class="pt-10">
-                    <p class="profile-name font-bold text-xl"></p>
-                    <p class="text-sm text-gray-500">
-                        <span class="profile-age"></span> / <span class="profile-occupation"></span>
-                    </p>
+        <div class="bg-white rounded-2xl shadow-lg p-4 flex items-start space-x-4">
+            <img class="profile-img w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white flex-shrink-0" src="" alt="プロフィール画像">
+            <div class="flex-1">
+                <p class="profile-name font-bold text-xl"></p>
+                <p class="profile-sub-info text-sm text-gray-500 mb-2"></p>
+                
+                <div class="profile-occupation-wrapper text-sm space-y-1" style="display: none;">
+                    <p class="font-bold text-gray-400 text-xs">職業</p>
+                    <p class="profile-occupation"></p>
                 </div>
-                <div class="profile-hobby-wrapper w-full bg-gray-50 p-2 rounded-lg text-left text-sm" style="display: none;">
-                    <p class="font-bold text-gray-500">趣味</p>
-                    <p class="profile-hobby truncate"></p>
+                <div class="profile-hobby-wrapper text-sm space-y-1 mt-2" style="display: none;">
+                    <p class="font-bold text-gray-400 text-xs">趣味</p>
+                    <p class="profile-hobby"></p>
                 </div>
-                <div class="profile-comment-wrapper w-full bg-gray-50 p-2 rounded-lg text-left text-sm" style="display: none;">
-                     <p class="font-bold text-gray-500">ひとこと</p>
-                    <p class="profile-comment truncate"></p>
+                <div class="profile-comment-wrapper text-sm space-y-1 mt-2" style="display: none;">
+                     <p class="font-bold text-gray-400 text-xs">ひとこと</p>
+                    <p class="profile-comment"></p>
                 </div>
-                <div class="flex w-full justify-around pt-2">
+
+                <div class="flex w-full justify-end items-center pt-2 space-x-4">
+                    <button class="help-btn bg-amber-400 hover:bg-amber-500 text-white font-bold py-2 px-3 rounded-full text-sm flex items-center">
+                        <i class="fas fa-bullhorn mr-1"></i> たすけて！
+                    </button>
                     <button class="like-btn text-gray-400 text-3xl transition-transform hover:scale-125"><i class="fas fa-heart"></i></button>
-                    <button class="message-btn text-pink-500 text-3xl transition-transform hover:scale-125"><i class="fas fa-comment-dots"></i></button>
                 </div>
             </div>
         </div>
@@ -107,7 +87,6 @@
         // --- 要素の取得 ---
         const loadingScreen = document.getElementById('loading-screen');
         const mainScreen = document.getElementById('main-screen');
-        const messageModal = document.getElementById('message-modal');
         let myUserId = '';
 
         // --- メイン処理 ---
@@ -131,22 +110,29 @@
                 const response = await fetch(GAS_WEB_APP_URL + '?action=getParticipants');
                 const allParticipants = await response.json();
 
-                const maleList = document.getElementById('male-list');
-                const femaleList = document.getElementById('female-list');
-                maleList.innerHTML = '';
-                femaleList.innerHTML = '';
+                if (!Array.isArray(allParticipants)) throw new Error("参加者データの形式が正しくありません。");
 
-                const men = allParticipants.filter(p => p.gender === '男性' && p.userId !== myUserId);
-                const women = allParticipants.filter(p => p.gender === '女性' && p.userId !== myUserId);
+                const myProfile = allParticipants.find(p => p.userId === myUserId);
+                if (!myProfile) { 
+                    loadingScreen.innerHTML = `<p class="text-red-600">あなたのプロフィールが「参加中」シートに見つかりません。<br>管理者にお問い合わせください。</p>`;
+                    return;
+                }
+                
+                const oppositeGender = myProfile.gender === '男性' ? '女性' : '男性';
+                const oppositeGenderParticipants = allParticipants.filter(p => p.gender === oppositeGender);
 
-                men.forEach(p => maleList.appendChild(createParticipantCard(p)));
-                women.forEach(p => femaleList.appendChild(createParticipantCard(p)));
+                document.getElementById('opposite-gender-title').textContent = `${oppositeGender}メンバー`;
+                document.getElementById('opposite-gender-title').classList.add(oppositeGender === '男性' ? 'text-blue-500' : 'text-pink-500');
+
+                const listElement = document.getElementById('opposite-gender-list');
+                listElement.innerHTML = '';
+                oppositeGenderParticipants.forEach(p => listElement.appendChild(createParticipantCard(p)));
 
                 loadingScreen.style.display = 'none';
                 mainScreen.style.display = 'block';
             } catch (error) {
                 console.error(error);
-                loadingScreen.innerHTML = `<p>参加者情報の取得に失敗しました。</p>`;
+                loadingScreen.innerHTML = `<p>参加者情報の取得に失敗しました。<br>GASのログを確認してください。</p>`;
             }
         }
         
@@ -157,18 +143,14 @@
             card.querySelector('.profile-img').src = p.pictureUrl || 'https://placehold.co/100x100/CBD5E1/475569?text=No+Img';
             card.querySelector('.profile-name').textContent = p.nickname || '名前未設定';
             
-            const ageEl = card.querySelector('.profile-age');
-            if (p.age) { ageEl.textContent = `${p.age}歳`; } else { ageEl.style.display = 'none'; }
+            const subInfoParts = [];
+            if (p.age) subInfoParts.push(`${p.age}歳`);
+            card.querySelector('.profile-sub-info').textContent = subInfoParts.join(' / ');
             
-            const occupationEl = card.querySelector('.profile-occupation');
-            if (p.occupation) { occupationEl.textContent = p.occupation; } else { occupationEl.style.display = 'none'; }
-            
-            // 年齢と職業のどちらもない場合は区切り文字も消す
-            if (!p.age && !p.occupation) {
-                ageEl.parentElement.style.display = 'none';
-            } else if (!p.age || !p.occupation) {
-                // 片方だけある場合は区切り文字を消す
-                ageEl.nextSibling.textContent = ''; 
+            const occupationWrapper = card.querySelector('.profile-occupation-wrapper');
+            if (p.occupation) {
+                occupationWrapper.querySelector('.profile-occupation').textContent = p.occupation;
+                occupationWrapper.style.display = 'block';
             }
 
             const hobbyWrapper = card.querySelector('.profile-hobby-wrapper');
@@ -187,39 +169,14 @@
                 e.currentTarget.classList.add('liked');
                 sendAction('like', p.userId);
             });
-            card.querySelector('.message-btn').addEventListener('click', () => openMessageModal(p.userId, p.nickname));
+            card.querySelector('.help-btn').addEventListener('click', () => {
+                 if (confirm("全員に「たすけて！」と通知します。よろしいですか？")) {
+                    sendAction('sendMessage', 'all', { message: 'たすけて！' });
+                    alert("「たすけて！」を送信しました！");
+                 }
+            });
             
             return card;
-        }
-
-        // --- イベントハンドラ ---
-        document.getElementById('modal-close-btn').addEventListener('click', () => messageModal.style.display = 'none');
-
-        // --- モーダル処理 ---
-        function openMessageModal(targetUserId, targetUserName) {
-            const modalTitle = document.getElementById('modal-title');
-            const messageButtons = document.getElementById('message-buttons');
-            modalTitle.textContent = `${targetUserName}さんにメッセージ`;
-            messageButtons.innerHTML = '';
-
-            const messages = [
-                { text: 'おめでとう！🎉', type: 'personal' }, { text: 'ありがとう！😊', type: 'personal' },
-                { text: 'すごい！✨', type: 'personal' }, { text: 'お話ししたいです！☕', type: 'personal' },
-                { text: 'たすけて！🆘', type: 'all' }, { text: '手伝います！💪', type: 'all' },
-            ];
-
-            messages.forEach(msg => {
-                const btn = document.createElement('button');
-                btn.className = "w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold py-3 px-4 rounded-lg";
-                btn.textContent = msg.text + (msg.type === 'all' ? ' (全員に)' : '');
-                btn.onclick = () => {
-                    sendAction('sendMessage', targetUserId, { message: msg.text, type: msg.type });
-                    messageModal.style.display = 'none';
-                    alert(`「${msg.text}」を送信しました！`);
-                };
-                messageButtons.appendChild(btn);
-            });
-            messageModal.style.display = 'flex';
         }
 
         // --- データ送信 ---
