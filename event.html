@@ -76,7 +76,6 @@
                 </div>
 
                 <div class="flex w-full justify-end items-center pt-2 space-x-3">
-                    <!-- ★★★ 修正点：text-rightをtext-centerに変更 ★★★ -->
                     <div class="text-center">
                         <button class="like-btn text-gray-400 text-3xl transition-transform hover:scale-125"><i class="fas fa-heart"></i></button>
                         <p class="text-xs text-gray-400 -mt-1">いいねを送る</p>
@@ -198,17 +197,34 @@
                 { text: 'おめでとう！🎉', type: 'personal' },
                 { text: 'ありがとう！😊', type: 'personal' },
                 { text: 'すごい！✨', type: 'personal' },
-                { text: 'お話ししたいです！☕', type: 'personal' }
+                { text: 'お話ししたいです！☕', type: 'personal' },
+                { text: 'たのしかった！😆', type: 'personal' },
+                { text: 'ごめんなさい🙏', type: 'personal' },
+                { text: 'たすけて！🆘', type: 'all' }
             ];
 
             messages.forEach(msg => {
                 const btn = document.createElement('button');
                 btn.className = "w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold py-3 px-4 rounded-lg";
-                btn.textContent = msg.text;
+                
+                let btnText = msg.text;
+                if (msg.type === 'all') {
+                    btnText = `<i class="fas fa-bullhorn mr-2"></i> ${msg.text} (全員に)`;
+                    btn.classList.remove('bg-pink-100', 'hover:bg-pink-200', 'text-pink-800');
+                    btn.classList.add('bg-amber-400', 'hover:bg-amber-500', 'text-white');
+                }
+                btn.innerHTML = btnText;
+
                 btn.onclick = () => {
-                    sendAction('sendMessage', targetUserId, { message: msg.text, type: msg.type });
-                    messageModal.style.display = 'none';
-                    alert(`「${msg.text}」を送信しました！`);
+                    const confirmMessage = msg.type === 'all' 
+                        ? `全員に「${msg.text}」と通知します。よろしいですか？`
+                        : `「${msg.text}」を送信します。よろしいですか？`;
+
+                    if (confirm(confirmMessage)) {
+                        sendAction('sendMessage', targetUserId, { message: msg.text, type: msg.type });
+                        messageModal.style.display = 'none';
+                        alert(`「${msg.text}」を送信しました！`);
+                    }
                 };
                 messageButtons.appendChild(btn);
             });
