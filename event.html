@@ -25,8 +25,6 @@
         }
         .like-btn.liked { animation: heart-pop 0.5s forwards; color: #F43F5E; }
         @keyframes heart-pop { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
-        .gender-male { color: #3b82f6; }
-        .gender-female { color: #ec4899; }
         .profile-comment { white-space: pre-wrap; word-break: break-word; }
     </style>
 </head>
@@ -44,6 +42,15 @@
             <div id="opposite-gender-list" class="space-y-4">
                 <!-- ここに異性参加者カードが動的に挿入されます -->
             </div>
+        </div>
+    </div>
+    
+    <!-- ===== メッセージ送信モーダル ===== -->
+    <div id="message-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h2 id="modal-title" class="text-xl font-bold text-center mb-4">メッセージを送る</h2>
+            <div id="message-buttons" class="space-y-3"></div>
+            <button id="modal-close-btn" class="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">とじる</button>
         </div>
     </div>
 
@@ -68,11 +75,14 @@
                     <p class="profile-comment"></p>
                 </div>
 
-                <div class="flex w-full justify-end items-center pt-2 space-x-4">
-                    <button class="help-btn bg-amber-400 hover:bg-amber-500 text-white font-bold py-2 px-3 rounded-full text-sm flex items-center">
-                        <i class="fas fa-bullhorn mr-1"></i> たすけて！
+                <div class="flex w-full justify-end items-center pt-2 space-x-2">
+                    <div class="text-right">
+                        <button class="like-btn text-gray-400 text-3xl transition-transform hover:scale-125"><i class="fas fa-heart"></i></button>
+                        <p class="text-xs text-gray-400 -mt-1">いいねを送る</p>
+                    </div>
+                    <button class="message-btn bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full text-sm flex items-center">
+                        <i class="fas fa-comment-dots mr-2"></i> メッセージ
                     </button>
-                    <button class="like-btn text-gray-400 text-3xl transition-transform hover:scale-125"><i class="fas fa-heart"></i></button>
                 </div>
             </div>
         </div>
@@ -81,12 +91,13 @@
 
     <script>
         // --- 設定 ---
-        const LIFF_ID = "2007667389-LBMOpGMy"; // プロフィール交換アプリのLIFF ID
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzJvYXNwqZhNv8SujSl1J_O4nOCEUOMAWdXNjPWaFFG1obYgLWADuDBQwhECqwWo2QBnw/exec"; // 統合版GASのURL
+        const LIFF_ID = "2007667389-LBMOpGMy";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzJvYXNwqZhNv8SujSl1J_O4nOCEUOMAWdXNjPWaFFG1obYgLWADuDBQwhECqwWo2QBnw/exec";
 
         // --- 要素の取得 ---
         const loadingScreen = document.getElementById('loading-screen');
         const mainScreen = document.getElementById('main-screen');
+        const messageModal = document.getElementById('message-modal');
         let myUserId = '';
 
         // --- メイン処理 ---
@@ -107,7 +118,7 @@
         async function showMainScreen() {
             try {
                 loadingScreen.style.display = 'flex';
-                const response = await fetch(GAS_WEB_APP_URL + '?action=getParticipants');
+                const response = await fetch(GAS_WEB_APP_URL + `?action=getParticipants`);
                 const allParticipants = await response.json();
 
                 if (!Array.isArray(allParticipants)) throw new Error("参加者データの形式が正しくありません。");
@@ -145,14 +156,9 @@
             
             const subInfoParts = [];
             if (p.age) subInfoParts.push(`${p.age}歳`);
+            if (p.occupation) subInfoParts.push(p.occupation);
             card.querySelector('.profile-sub-info').textContent = subInfoParts.join(' / ');
             
-            const occupationWrapper = card.querySelector('.profile-occupation-wrapper');
-            if (p.occupation) {
-                occupationWrapper.querySelector('.profile-occupation').textContent = p.occupation;
-                occupationWrapper.style.display = 'block';
-            }
-
             const hobbyWrapper = card.querySelector('.profile-hobby-wrapper');
             if (p.hobby) {
                 hobbyWrapper.querySelector('.profile-hobby').textContent = p.hobby;
@@ -169,14 +175,45 @@
                 e.currentTarget.classList.add('liked');
                 sendAction('like', p.userId);
             });
-            card.querySelector('.help-btn').addEventListener('click', () => {
-                 if (confirm("全員に「たすけて！」と通知します。よろしいですか？")) {
-                    sendAction('sendMessage', 'all', { message: 'たすけて！' });
-                    alert("「たすけて！」を送信しました！");
-                 }
+            
+            // ★★★ 修正点：「たすけて！」ボタンを削除し、個別メッセージボタンの機能を復活 ★★★
+            card.querySelector('.message-btn').addEventListener('click', () => {
+                openMessageModal(p.userId, p.nickname);
             });
             
             return card;
+        }
+
+        // --- イベントハンドラ ---
+        document.getElementById('modal-close-btn').addEventListener('click', () => messageModal.style.display = 'none');
+
+        // --- モーダル処理 ---
+        function openMessageModal(targetUserId, targetUserName) {
+            const modalTitle = document.getElementById('modal-title');
+            const messageButtons = document.getElementById('message-buttons');
+            modalTitle.textContent = `${targetUserName}さんにメッセージ`;
+            messageButtons.innerHTML = '';
+
+            // ★★★ 修正点：個別メッセージのみに絞る ★★★
+            const messages = [
+                { text: 'おめでとう！🎉', type: 'personal' },
+                { text: 'ありがとう！😊', type: 'personal' },
+                { text: 'すごい！✨', type: 'personal' },
+                { text: 'お話ししたいです！☕', type: 'personal' }
+            ];
+
+            messages.forEach(msg => {
+                const btn = document.createElement('button');
+                btn.className = "w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold py-3 px-4 rounded-lg";
+                btn.textContent = msg.text;
+                btn.onclick = () => {
+                    sendAction('sendMessage', targetUserId, { message: msg.text, type: msg.type });
+                    messageModal.style.display = 'none';
+                    alert(`「${msg.text}」を送信しました！`);
+                };
+                messageButtons.appendChild(btn);
+            });
+            messageModal.style.display = 'flex';
         }
 
         // --- データ送信 ---
