@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>プロフィール交換</title>
+    <!-- LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html, body {
+            overscroll-behavior: none;
+        }
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #FFF1F2; /* 淡いピンクの背景 */
+        }
+        /* いいねボタンのアニメーション */
+        .like-btn.liked {
+            animation: heart-pop 0.5s forwards;
+            color: #F43F5E; /* 押した後の色 */
+        }
+        @keyframes heart-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- ===== ローディング画面 ===== -->
+    <div id="loading-screen" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <p>アプリを準備しています...</p>
+    </div>
+
+    <!-- ===== プロフィール登録画面 ===== -->
+    <div id="registration-screen" class="hidden p-6 min-h-screen bg-white">
+        <h1 class="text-2xl font-bold text-center text-pink-600 mb-6">プロフィール登録</h1>
+        <div class="space-y-6">
+            <div>
+                <label for="display-name" class="block text-sm font-bold text-gray-700 mb-1">表示名</label>
+                <input type="text" id="display-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-pink-500 focus:border-pink-500" placeholder="例：はなこ">
+            </div>
+            <div>
+                <label for="self-introduction" class="block text-sm font-bold text-gray-700 mb-1">自己紹介</label>
+                <textarea id="self-introduction" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-pink-500 focus:border-pink-500" placeholder="趣味や好きなことを自由にご記入ください"></textarea>
+            </div>
+            <button id="register-btn" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                登録してイベントに参加する
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== メイン画面（参加者一覧） ===== -->
+    <div id="main-screen" class="hidden p-4">
+        <h1 class="text-2xl font-bold text-center text-pink-600 my-4">参加者プロフィール</h1>
+        <div id="participant-list" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <!-- ここに参加者カードが動的に挿入されます -->
+        </div>
+    </div>
+
+    <!-- ===== メッセージ送信モーダル ===== -->
+    <div id="message-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h2 id="modal-title" class="text-xl font-bold text-center mb-4">メッセージを送る</h2>
+            <div id="message-buttons" class="space-y-3">
+                <!-- ここにメッセージボタンが動的に挿入されます -->
+            </div>
+            <button id="modal-close-btn" class="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                とじる
+            </button>
+        </div>
+    </div>
+
+    <!-- 参加者カードのテンプレート -->
+    <template id="participant-card-template">
+        <div class="bg-white rounded-xl shadow-md p-4 flex flex-col items-center text-center space-y-2">
+            <img class="profile-img w-20 h-20 rounded-full object-cover border-4 border-white shadow-sm" src="" alt="プロフィール画像">
+            <p class="profile-name font-bold text-lg"></p>
+            <p class="profile-intro text-sm text-gray-600 h-12 overflow-hidden"></p>
+            <div class="flex w-full justify-around pt-2">
+                <button class="like-btn text-gray-400 text-3xl">
+                    <i class="fas fa-heart"></i>
+                </button>
+                <button class="message-btn text-pink-500 text-3xl">
+                    <i class="fas fa-comment-dots"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
+
+    <script>
+        // --- 設定 ---
+        const LIFF_ID = "YOUR_LIFF_ID"; // 自身のLIFF IDに書き換えてください
+        const GAS_WEB_APP_URL = "YOUR_GAS_WEB_APP_URL"; // GASのウェブアプリURLに書き換えてください
+
+        // --- 要素の取得 ---
+        const loadingScreen = document.getElementById('loading-screen');
+        const registrationScreen = document.getElementById('registration-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const messageModal = document.getElementById('message-modal');
+        let myUserId = ''; // 自身のユーザーIDを保持
+
+        // --- メイン処理 ---
+        async function main() {
+            // ★★★ 修正点：LIFF IDが設定されているかチェック ★★★
+            if (LIFF_ID === "YOUR_LIFF_ID" || !LIFF_ID) {
+                loadingScreen.innerHTML = '<p class="text-red-600">エラー: LIFF IDが設定されていません。<br>コード内の「YOUR_LIFF_ID」を<br>あなたのLIFF IDに置き換えてください。</p>';
+                return;
+            }
+            if (GAS_WEB_APP_URL === "YOUR_GAS_WEB_APP_URL" || !GAS_WEB_APP_URL) {
+                loadingScreen.innerHTML = '<p class="text-red-600">エラー: GASのURLが設定されていません。<br>コード内の「YOUR_GAS_WEB_APP_URL」を<br>あなたのGASウェブアプリURLに置き換えてください。</p>';
+                return;
+            }
+
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+                const profile = await liff.getProfile();
+                myUserId = profile.userId;
+
+                // サーバーにユーザー登録状況を確認
+                const response = await fetch(GAS_WEB_APP_URL + `?action=checkUser&userId=${myUserId}`);
+                const result = await response.json();
+
+                if (result.isRegistered) {
+                    await showMainScreen();
+                } else {
+                    // 未登録の場合、登録画面を表示
+                    document.getElementById('display-name').value = profile.displayName;
+                    loadingScreen.style.display = 'none';
+                    registrationScreen.style.display = 'block';
+                }
+            } catch (error) {
+                console.error(error);
+                loadingScreen.innerHTML = `<p class="text-red-600">エラーが発生しました。<br>LIFF IDが正しいか確認してください。<br>${error.message}</p>`;
+            }
+        }
+
+        // --- 画面表示ロジック ---
+        async function showMainScreen() {
+            try {
+                const response = await fetch(GAS_WEB_APP_URL + '?action=getParticipants');
+                const participants = await response.json();
+
+                const listElement = document.getElementById('participant-list');
+                const template = document.getElementById('participant-card-template');
+                listElement.innerHTML = ''; // リストをクリア
+
+                participants.forEach(p => {
+                    if (p.userId === myUserId) return; // 自分は表示しない
+
+                    const card = template.content.cloneNode(true);
+                    card.querySelector('.profile-img').src = p.pictureUrl || 'https://placehold.co/100x100/E9D5FF/A855F7?text=No+Img';
+                    card.querySelector('.profile-name').textContent = p.displayName;
+                    card.querySelector('.profile-intro').textContent = p.introduction;
+
+                    // いいねボタンの処理
+                    const likeBtn = card.querySelector('.like-btn');
+                    likeBtn.addEventListener('click', () => {
+                        likeBtn.classList.add('liked');
+                        sendAction('like', p.userId);
+                    });
+
+                    // メッセージボタンの処理
+                    const messageBtn = card.querySelector('.message-btn');
+                    messageBtn.addEventListener('click', () => {
+                        openMessageModal(p.userId, p.displayName);
+                    });
+
+                    listElement.appendChild(card);
+                });
+
+                registrationScreen.style.display = 'none';
+                loadingScreen.style.display = 'none';
+                mainScreen.style.display = 'block';
+
+            } catch (error) {
+                console.error(error);
+                loadingScreen.innerHTML = `<p>参加者情報の取得に失敗しました。</p>`;
+            }
+        }
+
+        // --- イベントハンドラ ---
+        // プロフィール登録ボタン
+        document.getElementById('register-btn').addEventListener('click', async () => {
+            const displayName = document.getElementById('display-name').value;
+            const introduction = document.getElementById('self-introduction').value;
+
+            if (!displayName) {
+                alert('表示名を入力してください。');
+                return;
+            }
+            
+            const profile = await liff.getProfile();
+            const postData = {
+                action: 'register',
+                userId: profile.userId,
+                displayName: displayName,
+                pictureUrl: profile.pictureUrl,
+                introduction: introduction
+            };
+            
+            await sendData(postData);
+            await showMainScreen();
+        });
+
+        // メッセージモーダルを閉じる
+        document.getElementById('modal-close-btn').addEventListener('click', () => {
+            messageModal.style.display = 'none';
+        });
+
+        // --- メッセージモーダル処理 ---
+        function openMessageModal(targetUserId, targetUserName) {
+            const modalTitle = document.getElementById('modal-title');
+            const messageButtons = document.getElementById('message-buttons');
+            
+            modalTitle.textContent = `${targetUserName}さんにメッセージ`;
+            messageButtons.innerHTML = ''; // ボタンをクリア
+
+            const messages = [
+                { text: 'おめでとう！🎉', type: 'personal' },
+                { text: 'ありがとう！😊', type: 'personal' },
+                { text: 'すごい！✨', type: 'personal' },
+                { text: 'お話ししたいです！☕', type: 'personal' },
+                { text: 'たすけて！🆘', type: 'all' },
+                { text: '手伝います！💪', type: 'all' },
+            ];
+
+            messages.forEach(msg => {
+                const btn = document.createElement('button');
+                btn.className = "w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold py-3 px-4 rounded-lg";
+                btn.textContent = msg.text + (msg.type === 'all' ? ' (全員に)' : '');
+                btn.onclick = () => {
+                    sendAction('sendMessage', targetUserId, { message: msg.text, type: msg.type });
+                    messageModal.style.display = 'none';
+                    alert(`「${msg.text}」を送信しました！`);
+                };
+                messageButtons.appendChild(btn);
+            });
+
+            messageModal.style.display = 'flex';
+        }
+
+        // --- データ送信 ---
+        async function sendData(data) {
+            try {
+                await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+            } catch (error) {
+                console.error('データの送信に失敗しました:', error);
+            }
+        }
+        
+        async function sendAction(action, targetUserId, details = {}) {
+             const postData = { action, fromUserId: myUserId, targetUserId, ...details };
+             await sendData(postData);
+        }
+
+        // --- 初期化 ---
+        main();
+
+    </script>
+</body>
+</html>
