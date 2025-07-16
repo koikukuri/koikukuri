@@ -106,8 +106,8 @@
 
     <script>
         // --- 設定 ---
-        const LIFF_ID = "YOUR_LIFF_ID"; // 自身のLIFF IDに書き換えてください
-        const GAS_WEB_APP_URL = "YOUR_GAS_WEB_APP_URL"; // GASのウェブアプリURLに書き換えてください
+        const LIFF_ID = "YOUR_PROFILE_LIFF_ID"; // ★★★ このアプリ専用の新しいLIFF IDに書き換えてください ★★★
+        const GAS_WEB_APP_URL = "YOUR_SINGLE_GAS_URL"; // 統合版GASのURL
 
         // --- 要素の取得 ---
         const loadingScreen = document.getElementById('loading-screen');
@@ -118,13 +118,12 @@
 
         // --- メイン処理 ---
         async function main() {
-            // ★★★ 修正点：LIFF IDが設定されているかチェック ★★★
-            if (LIFF_ID === "YOUR_LIFF_ID" || !LIFF_ID) {
-                loadingScreen.innerHTML = '<p class="text-red-600">エラー: LIFF IDが設定されていません。<br>コード内の「YOUR_LIFF_ID」を<br>あなたのLIFF IDに置き換えてください。</p>';
+            if (LIFF_ID === "YOUR_PROFILE_LIFF_ID" || !LIFF_ID) {
+                loadingScreen.innerHTML = '<p class="text-red-600">エラー: LIFF IDが設定されていません。</p>';
                 return;
             }
-            if (GAS_WEB_APP_URL === "YOUR_GAS_WEB_APP_URL" || !GAS_WEB_APP_URL) {
-                loadingScreen.innerHTML = '<p class="text-red-600">エラー: GASのURLが設定されていません。<br>コード内の「YOUR_GAS_WEB_APP_URL」を<br>あなたのGASウェブアプリURLに置き換えてください。</p>';
+            if (GAS_WEB_APP_URL === "YOUR_SINGLE_GAS_URL" || !GAS_WEB_APP_URL) {
+                loadingScreen.innerHTML = '<p class="text-red-600">エラー: GASのURLが設定されていません。</p>';
                 return;
             }
 
@@ -151,7 +150,7 @@
                 }
             } catch (error) {
                 console.error(error);
-                loadingScreen.innerHTML = `<p class="text-red-600">エラーが発生しました。<br>LIFF IDが正しいか確認してください。<br>${error.message}</p>`;
+                loadingScreen.innerHTML = `<p class="text-red-600">エラーが発生しました。<br>${error.message}</p>`;
             }
         }
 
