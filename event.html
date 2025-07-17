@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>謎解き</title>
+    <title>参加者プロフィール</title>
     <!-- LIFF SDK -->
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <!-- Google Fonts (ドット絵フォント) -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -17,188 +17,264 @@
     <style>
         html, body { overscroll-behavior: none; }
         body {
-            font-family: 'DotGothic16', sans-serif;
-            background-color: #334155;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
             touch-action: manipulation;
             -webkit-user-select: none; user-select: none;
             -webkit-tap-highlight-color: transparent;
+            background-color: #fdf2f8;
         }
-        .pixel-container {
-            background-color: #F1F5F9;
-            border: 4px solid #1E293B;
-            box-shadow: 8px 8px 0px #1E293B;
+        .like-btn.liked { animation: heart-pop 0.5s forwards; color: #F43F5E; }
+        @keyframes heart-pop { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
+        .profile-comment { white-space: pre-wrap; word-break: break-word; }
+        .heart-spinner {
+            width: 60px;
+            height: 60px;
+            position: relative;
+            animation: heart-spin 1.2s infinite linear;
         }
-        .pixel-btn {
-            background-color: #64748B;
-            color: white;
-            border: 4px solid #1E293B;
-            box-shadow: 2px 2px 0px #1E293B;
-            transition: all 0.1s;
+        .heart-spinner::before,
+        .heart-spinner::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 30px;
+            width: 30px;
+            height: 50px;
+            background: #ec4899;
+            border-radius: 50px 50px 0 0;
+            transform: rotate(-45deg);
+            transform-origin: 0 100%;
         }
-        .pixel-btn:active { transform: translate(2px, 2px); box-shadow: none; }
-        .arrow-btn { padding: 4px; font-size: 1.2rem; }
-        .pixel-display {
-            background-color: #CBD5E1;
-            border: 4px solid #475569;
-            height: 80px; width: 80px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 3rem; line-height: 1;
+        .heart-spinner::after {
+            left: 0;
+            transform: rotate(45deg);
+            transform-origin: 100% 100%;
         }
-        .hand-icon { font-size: 2.5rem; }
-        #success-message {
-             background-color: rgba(30, 41, 59, 0.9);
-             border: 4px solid #F1F5F9;
+        @keyframes heart-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .close-btn { background-color: #ef4444; }
-        #fireworks-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
-        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        #loading { position: fixed; inset: 0; background-color: #334155; z-index: 9999; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; text-align: center; padding: 1rem; }
     </style>
 </head>
-<body class="flex items-center justify-center h-screen overflow-hidden p-4">
+<body class="text-gray-800">
 
-    <div id="loading">よみこみちゅう...</div>
-    <canvas id="fireworks-canvas"></canvas>
-    <div id="main-content" class="relative w-full max-w-sm" style="display: none;">
-        <div id="game-container" class="pixel-container p-6">
-            <div class="flex justify-around items-end">
-                <!-- スピナー -->
-                <div class="spinner-widget text-center">
-                    <div class="hand-icon h-10 mb-2 flex items-center justify-center"></div>
-                    <button class="spinner-btn up-btn pixel-btn arrow-btn w-full">▲</button>
-                    <div class="pixel-display my-1"></div>
-                    <button class="spinner-btn down-btn pixel-btn arrow-btn w-full">▼</button>
-                </div>
-                <div class="spinner-widget text-center">
-                    <div class="hand-icon h-10 mb-2 flex items-center justify-center"></div>
-                    <button class="spinner-btn up-btn pixel-btn arrow-btn w-full">▲</button>
-                    <div class="pixel-display my-1"></div>
-                    <button class="spinner-btn down-btn pixel-btn arrow-btn w-full">▼</button>
-                </div>
-                <div class="spinner-widget text-center">
-                    <div class="hand-icon h-10 mb-2 flex items-center justify-center"></div>
-                    <button class="spinner-btn up-btn pixel-btn arrow-btn w-full">▲</button>
-                    <div class="pixel-display my-1"></div>
-                    <button class="spinner-btn down-btn pixel-btn arrow-btn w-full">▼</button>
-                </div>
-            </div>
-            <div class="mt-8 text-center">
-                <button id="check-btn" class="pixel-btn bg-sky-500 py-3 px-10 text-xl">けってい</button>
-            </div>
-        </div>
-        <div id="success-message" class="hidden absolute inset-0 text-white p-6 flex flex-col items-center justify-center text-center">
-            <h2 class="text-4xl mb-4">クリア!</h2>
-            <p class="text-lg mb-6">みんなに通知しました！</p>
-            <button id="close-btn" class="pixel-btn close-btn py-3 px-10 text-xl">とじる</button>
-        </div>
-        <div id="message-area" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-600 text-white font-bold py-3 px-5 border-4 border-slate-900"></div>
+    <!-- ===== ローディング画面 ===== -->
+    <div id="loading-screen" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-4 space-y-6">
+        <div class="heart-spinner"></div>
+        <p class="text-gray-600">プロフィールを読み込んでいます...</p>
     </div>
 
+    <!-- ===== メイン画面（参加者一覧） ===== -->
+    <div id="main-screen" class="hidden p-4 space-y-8">
+        <div id="opposite-gender-section">
+            <h2 id="opposite-gender-title" class="text-2xl font-bold text-center mb-4"></h2>
+            <div id="opposite-gender-list" class="space-y-4">
+                <!-- ここに異性参加者カードが動的に挿入されます -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== メッセージ送信モーダル ===== -->
+    <div id="message-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h2 id="modal-title" class="text-xl font-bold text-center mb-4">メッセージを送る</h2>
+            <div id="message-buttons" class="space-y-3"></div>
+            <button id="modal-close-btn" class="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">とじる</button>
+        </div>
+    </div>
+
+    <!-- ===== 参加者カードのテンプレート ===== -->
+    <template id="participant-card-template">
+        <div class="bg-white rounded-2xl shadow-lg p-4">
+            <div class="flex-1">
+                <p class="profile-name font-bold text-xl"></p>
+                <p class="profile-sub-info text-sm text-gray-500 mb-2"></p>
+                
+                <div class="profile-occupation-wrapper text-sm space-y-1" style="display: none;">
+                    <p class="font-bold text-gray-400 text-xs">職業</p>
+                    <p class="profile-occupation"></p>
+                </div>
+                <div class="profile-hobby-wrapper text-sm space-y-1 mt-2" style="display: none;">
+                    <p class="font-bold text-gray-400 text-xs">趣味</p>
+                    <p class="profile-hobby"></p>
+                </div>
+                <div class="profile-comment-wrapper text-sm space-y-1 mt-2" style="display: none;">
+                     <p class="font-bold text-gray-400 text-xs">ひとこと</p>
+                    <p class="profile-comment"></p>
+                </div>
+
+                <div class="flex w-full justify-end items-center pt-2 space-x-3">
+                    <div class="text-center">
+                        <button class="like-btn text-gray-400 text-3xl transition-transform hover:scale-125"><i class="fas fa-heart"></i></button>
+                        <p class="text-xs text-gray-400 -mt-1">いいねを送る</p>
+                    </div>
+                    <button class="message-btn bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full text-sm flex items-center">
+                        <i class="fas fa-comment-dots mr-2"></i> メッセージ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
     <script>
-        // ----------------------------------------------------------------------
-        // ★★★ 謎ごとにここを書き換えてください ★★★
-        // ----------------------------------------------------------------------
-        const LIFF_ID = "2007667389-zrkMpOk3"; // ★★★ LIFF IDを更新しました ★★★
-        const RIDDLE_NAME = "じゃんけんの謎"; // 通知メッセージに表示される謎の名前
-        const correctAnswer = ['🚥', '🍜', '🐷']; // この謎の正解
-        // ----------------------------------------------------------------------
-
-        // --- 共通設定 ---
-        const GAS_WEB_APP_URL = "YOUR_SINGLE_GAS_URL"; // 統合版GASのURL
-
-        // --- ゲーム設定 ---
-        const emojis = ['�', '🧋', '🍜', '🚗', '🦒', '🐷', '🦴', '🎆', '🥝', '🐷'];
-        const handEmojis = ['✊', '✌️', '✋'];
+        // --- 設定 ---
+        const LIFF_ID = "2007667389-LBMOpGMy";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzJvYXNwqZhNv8SujSl1J_O4nOCEUOMAWdXNjPWaFFG1obYgLWADuDBQwhECqwWo2QBnw/exec";
 
         // --- 要素の取得 ---
-        const loadingScreen = document.getElementById('loading');
-        const mainContent = document.getElementById('main-content');
-        let isSolved = false;
+        const loadingScreen = document.getElementById('loading-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const messageModal = document.getElementById('message-modal');
+        let myUserId = '';
 
-        // --- ゲーム初期化 ---
-        function initializeGame() {
-            const spinnerWidgets = document.querySelectorAll('.spinner-widget');
-            const checkButton = document.getElementById('check-btn');
-            const successMessage = document.getElementById('success-message');
-            const closeButton = document.getElementById('close-btn');
-            const messageArea = document.getElementById('message-area');
-            const canvas = document.getElementById('fireworks-canvas');
-            const ctx = canvas.getContext('2d');
-            let particles = [];
-
-            spinnerWidgets.forEach((widget, index) => {
-                let currentIndex = 1;
-                const displayDiv = widget.querySelector('.pixel-display');
-                const handIconDiv = widget.querySelector('.hand-icon');
-                handIconDiv.textContent = handEmojis[index];
-                const updateDisplay = () => { if (!isSolved) displayDiv.textContent = emojis[currentIndex]; };
-                widget.querySelector('.up-btn').addEventListener('click', () => { if (!isSolved) { currentIndex = (currentIndex - 1 + emojis.length) % emojis.length; updateDisplay(); } });
-                widget.querySelector('.down-btn').addEventListener('click', () => { if (!isSolved) { currentIndex = (currentIndex + 1) % emojis.length; updateDisplay(); } });
-                updateDisplay();
-            });
-
-            checkButton.addEventListener('click', () => {
-                if (isSolved) return;
-                const currentCombination = Array.from(document.querySelectorAll('.pixel-display')).map(div => div.textContent);
-                if (JSON.stringify(currentCombination) === JSON.stringify(correctAnswer)) {
-                    isSolved = true;
-                    successMessage.classList.remove('hidden');
-                    successMessage.classList.add('fade-in');
-                    launchFireworks();
-                    // actionとriddleNameを明記してGASに通知
-                    (async () => {
-                        try {
-                            const profile = await liff.getProfile();
-                            const postData = { 
-                                action: 'riddleClear', 
-                                userId: profile.userId, 
-                                riddleName: RIDDLE_NAME // この謎の名前を送信
-                            };
-                            await fetch(GAS_WEB_APP_URL, {
-                                method: 'POST',
-                                mode: 'no-cors',
-                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                body: new URLSearchParams(postData)
-                            });
-                        } catch (error) { console.error('通知送信に失敗:', error); }
-                    })();
-                } else {
-                    showMessage('ちがうみたい…');
-                }
-            });
-
-            closeButton.addEventListener('click', () => liff.closeWindow());
-            function showMessage(text) {
-                messageArea.textContent = text;
-                messageArea.classList.remove('hidden');
-                setTimeout(() => messageArea.classList.add('hidden'), 1200);
-            }
-            
-            // 花火エフェクト... (省略)
-            function launchFireworks() { /* ... */ }
-            function animate() { /* ... */ }
-            function setupCanvas() { /* ... */ }
-            class Particle { /* ... */ }
-        }
-
-        // --- LIFF初期化 ---
+        // --- メイン処理 ---
         async function main() {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login(); } 
-                else {
-                    loadingScreen.style.display = 'none';
-                    mainContent.style.display = 'block';
-                    initializeGame();
-                }
-            } catch (err) {
-                 console.error(err);
-                 loadingScreen.textContent = `LIFF初期化に失敗: ${err.message}`;
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+                const profile = await liff.getProfile();
+                myUserId = profile.userId;
+                await showMainScreen();
+            } catch (error) {
+                console.error(error);
+                loadingScreen.innerHTML = `<p class="text-red-600 font-bold">LIFFの初期化に失敗しました</p><p class="text-sm mt-2">LIFF IDまたはエンドポイントURLの設定が間違っている可能性があります。管理者にご確認ください。</p><p class="text-xs mt-4 text-gray-500">エラー: ${error.message}</p>`;
             }
         }
-        document.addEventListener('DOMContentLoaded', main);
+
+        // --- 画面表示ロジック ---
+        async function showMainScreen() {
+            try {
+                loadingScreen.style.display = 'flex';
+                const response = await fetch(GAS_WEB_APP_URL + `?action=getParticipants`);
+                const allParticipants = await response.json();
+
+                if (!Array.isArray(allParticipants)) throw new Error("参加者データの形式が正しくありません。");
+
+                const myProfile = allParticipants.find(p => p.userId === myUserId);
+                if (!myProfile) { 
+                    loadingScreen.innerHTML = `<p class="text-red-600">あなたのプロフィールが「参加中」シートに見つかりません。<br>管理者にお問い合わせください。</p>`;
+                    return;
+                }
+                
+                const oppositeGender = myProfile.gender === '男性' ? '女性' : '男性';
+                const oppositeGenderParticipants = allParticipants.filter(p => p.gender === oppositeGender);
+
+                document.getElementById('opposite-gender-title').textContent = `${oppositeGender}メンバー`;
+                document.getElementById('opposite-gender-title').classList.add(oppositeGender === '男性' ? 'text-blue-500' : 'text-pink-500');
+
+                const listElement = document.getElementById('opposite-gender-list');
+                listElement.innerHTML = '';
+                oppositeGenderParticipants.forEach(p => listElement.appendChild(createParticipantCard(p)));
+
+                loadingScreen.style.display = 'none';
+                mainScreen.style.display = 'block';
+            } catch (error) {
+                console.error(error);
+                loadingScreen.innerHTML = `<p>参加者情報の取得に失敗しました。<br>GASのログを確認してください。</p>`;
+            }
+        }
+        
+        function createParticipantCard(p) {
+            const template = document.getElementById('participant-card-template');
+            const card = template.content.cloneNode(true);
+            
+            card.querySelector('.profile-name').textContent = p.nickname || '名前未設定';
+            
+            const subInfoParts = [];
+            if (p.age) subInfoParts.push(`${p.age}歳`);
+            if (p.occupation) subInfoParts.push(p.occupation);
+            card.querySelector('.profile-sub-info').textContent = subInfoParts.join(' / ');
+            
+            const hobbyWrapper = card.querySelector('.profile-hobby-wrapper');
+            if (p.hobby) {
+                hobbyWrapper.querySelector('.profile-hobby').textContent = p.hobby;
+                hobbyWrapper.style.display = 'block';
+            }
+
+            const commentWrapper = card.querySelector('.profile-comment-wrapper');
+            if (p.comment) {
+                commentWrapper.querySelector('.profile-comment').textContent = p.comment;
+                commentWrapper.style.display = 'block';
+            }
+            
+            card.querySelector('.like-btn').addEventListener('click', (e) => {
+                e.currentTarget.classList.add('liked');
+                sendAction('like', p.userId);
+            });
+            
+            card.querySelector('.message-btn').addEventListener('click', () => {
+                openMessageModal(p.userId, p.nickname);
+            });
+            
+            return card;
+        }
+
+        // --- イベントハンドラ ---
+        document.getElementById('modal-close-btn').addEventListener('click', () => messageModal.style.display = 'none');
+
+        // --- モーダル処理 ---
+        function openMessageModal(targetUserId, targetUserName) {
+            const modalTitle = document.getElementById('modal-title');
+            const messageButtons = document.getElementById('message-buttons');
+            modalTitle.textContent = `${targetUserName}さんにメッセージ`;
+            messageButtons.innerHTML = '';
+
+            const messages = [
+                { text: 'おめでとう！🎉', type: 'personal' },
+                { text: 'ありがとう！😊', type: 'personal' },
+                { text: 'すごい！✨', type: 'personal' },
+                { text: 'お話ししたいです！☕', type: 'personal' },
+                { text: 'たのしかった！😆', type: 'personal' },
+                { text: 'ごめんなさい🙏', type: 'personal' },
+                { text: 'たすけて！🆘', type: 'all' }
+            ];
+
+            messages.forEach(msg => {
+                const btn = document.createElement('button');
+                btn.className = "w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold py-3 px-4 rounded-lg";
+                
+                let btnText = msg.text;
+                if (msg.type === 'all') {
+                    btnText = `<i class="fas fa-bullhorn mr-2"></i> ${msg.text} (全員に)`;
+                    btn.classList.remove('bg-pink-100', 'hover:bg-pink-200', 'text-pink-800');
+                    btn.classList.add('bg-amber-400', 'hover:bg-amber-500', 'text-white');
+                }
+                btn.innerHTML = btnText;
+
+                btn.onclick = () => {
+                    const confirmMessage = msg.type === 'all' 
+                        ? `全員に「${msg.text}」と通知します。よろしいですか？`
+                        : `「${msg.text}」を送信します。よろしいですか？`;
+
+                    if (confirm(confirmMessage)) {
+                        sendAction('sendMessage', targetUserId, { message: msg.text, type: msg.type });
+                        messageModal.style.display = 'none';
+                        alert(`「${msg.text}」を送信しました！`);
+                    }
+                };
+                messageButtons.appendChild(btn);
+            });
+            messageModal.style.display = 'flex';
+        }
+
+        // --- データ送信 ---
+        async function sendData(data) {
+            try {
+                await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST', mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+            } catch (error) { console.error('データ送信に失敗:', error); }
+        }
+        
+        async function sendAction(action, targetUserId, details = {}) {
+             await sendData({ action, fromUserId: myUserId, targetUserId, ...details });
+        }
+
+        // --- 初期化 ---
+        main();
     </script>
 </body>
 </html>
-�
