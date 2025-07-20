@@ -1,172 +1,176 @@
 <script>
     // --- 設定 ---
-    const LIFF_ID = "2007667389-LBMOpGMy";
+    const LIFF_ID = "2007667389-LBMOpGMy"; // 新しいIDに更新しました
     const GAS_WEB_APP_URL = "https://script.google.com/a/macros/coconazo.com/s/AKfycbyTjlNyHz5xGe-1XrBzzn5-DF8haB3WUw5ISqfqtcs7p4HRLmrV4oVZ-3PmfBvjkFwAPQ/exec";
 
-    // --- 要素の取得 ---
-    const loadingScreen = document.getElementById('loading-screen');
-    const mainScreen = document.getElementById('main-screen');
-    const messageModal = document.getElementById('message-modal');
-    let myUserId = '';
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    // ★★★ ここからが修正点です！ ★★★
+    // ★★★ HTMLの読み込み完了を待ってから処理を開始します ★★★
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    document.addEventListener('DOMContentLoaded', () => {
 
-    // --- メイン処理 ---
-    async function main() {
-        try {
-            await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) { liff.login(); return; }
-            const profile = await liff.getProfile();
-            myUserId = profile.userId;
-            await showMainScreen();
-        } catch (error) {
-            console.error(error);
-            loadingScreen.innerHTML = `<p class="text-red-600 font-bold">LIFFの初期化に失敗しました</p><p class="text-sm mt-2">LIFF IDまたはエンドポイントURLの設定が間違っている可能性があります。管理者にご確認ください。</p><p class="text-xs mt-4 text-gray-500">エラー: ${error.message}</p>`;
-        }
-    }
+        // --- 要素の取得 ---
+        const loadingScreen = document.getElementById('loading-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const messageModal = document.getElementById('message-modal');
+        let myUserId = '';
 
-    // --- 画面表示ロジック ---
-    async function showMainScreen() {
-        try {
-            loadingScreen.style.display = 'flex';
-            
-            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-            // ★★★ ここが修正点です！URLに &userId=${myUserId} を追加 ★★★
-            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-            const response = await fetch(GAS_WEB_APP_URL + `?action=getParticipants&userId=${myUserId}`);
-            const data = await response.json();
+        // --- イベントハンドラ ---
+        // DOMContentLoadedの中で実行するので、ボタンは確実に見つかります
+        document.getElementById('modal-close-btn').addEventListener('click', () => messageModal.style.display = 'none');
 
-            // GASからエラーが返ってきた場合のエラーハンドリングを強化
-            if (data.status === 'error') {
-                throw new Error(data.message || '不明なエラーが発生しました。');
+        // --- メイン処理 ---
+        async function main() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+                const profile = await liff.getProfile();
+                myUserId = profile.userId;
+                await showMainScreen();
+            } catch (error) {
+                console.error(error);
+                loadingScreen.innerHTML = `<p class="text-red-600 font-bold">LIFFの初期化に失敗しました</p><p class="text-sm mt-2">LIFF IDまたはエンドポイントURLの設定が間違っている可能性があります。管理者にご確認ください。</p><p class="text-xs mt-4 text-gray-500">エラー: ${error.message}</p>`;
             }
-
-            const allParticipants = data;
-
-            if (!Array.isArray(allParticipants)) throw new Error("参加者データの形式が正しくありません。");
-
-            const myProfile = allParticipants.find(p => p.userId === myUserId);
-            if (!myProfile) {
-                loadingScreen.innerHTML = `<p class="text-red-600">あなたのプロフィールが「参加中」シートに見つかりません。<br>管理者にお問い合わせください。</p>`;
-                return;
-            }
-            
-            const oppositeGender = myProfile.gender === '男性' ? '女性' : '男性';
-            const oppositeGenderParticipants = allParticipants.filter(p => p.gender === oppositeGender);
-
-            document.getElementById('opposite-gender-title').textContent = `${oppositeGender}メンバー`;
-            document.getElementById('opposite-gender-title').classList.add(oppositeGender === '男性' ? 'text-blue-500' : 'text-pink-500');
-
-            const listElement = document.getElementById('opposite-gender-list');
-            listElement.innerHTML = '';
-            oppositeGenderParticipants.forEach(p => listElement.appendChild(createParticipantCard(p)));
-
-            loadingScreen.style.display = 'none';
-            mainScreen.style.display = 'block';
-        } catch (error) {
-            console.error(error);
-            // エラーメッセージをより具体的に表示
-            loadingScreen.innerHTML = `<p class="text-red-500">参加者情報の取得に失敗しました。<br>${error.message}</p>`;
-        }
-    }
-    
-    function createParticipantCard(p) {
-        const template = document.getElementById('participant-card-template');
-        const card = template.content.cloneNode(true);
-        
-        card.querySelector('.profile-name').textContent = p.nickname || '名前未設定';
-        
-        const subInfoParts = [];
-        if (p.age) subInfoParts.push(`${p.age}歳`);
-        if (p.occupation) subInfoParts.push(p.occupation);
-        card.querySelector('.profile-sub-info').textContent = subInfoParts.join(' / ');
-        
-        const hobbyWrapper = card.querySelector('.profile-hobby-wrapper');
-        if (p.hobby) {
-            hobbyWrapper.querySelector('.profile-hobby').textContent = p.hobby;
-            hobbyWrapper.style.display = 'block';
         }
 
-        const commentWrapper = card.querySelector('.profile-comment-wrapper');
-        if (p.comment) {
-            commentWrapper.querySelector('.profile-comment').textContent = p.comment;
-            commentWrapper.style.display = 'block';
-        }
-        
-        card.querySelector('.like-btn').addEventListener('click', (e) => {
-            e.currentTarget.classList.add('liked');
-            sendAction('like', p.userId);
-        });
-        
-        card.querySelector('.message-btn').addEventListener('click', () => {
-            openMessageModal(p.userId, p.nickname);
-        });
-        
-        return card;
-    }
+        // --- 画面表示ロジック ---
+        async function showMainScreen() {
+            try {
+                loadingScreen.style.display = 'flex';
+                const response = await fetch(GAS_WEB_APP_URL + `?action=getParticipants&userId=${myUserId}`);
+                const data = await response.json();
 
-    // --- イベントハンドラ ---
-    document.getElementById('modal-close-btn').addEventListener('click', () => messageModal.style.display = 'none');
-
-    // --- モーダル処理 ---
-    function openMessageModal(targetUserId, targetUserName) {
-        const modalTitle = document.getElementById('modal-title');
-        const messageButtons = document.getElementById('message-buttons');
-        modalTitle.textContent = `${targetUserName}さんにメッセージ`;
-        messageButtons.innerHTML = '';
-
-        const messages = [
-            { text: 'おめでとう！🎉', type: 'personal' },
-            { text: 'ありがとう！😊', type: 'personal' },
-            { text: 'すごい！✨', type: 'personal' },
-            { text: 'お話ししたいです！☕', type: 'personal' },
-            { text: 'たのしかった！😆', type: 'personal' },
-            { text: 'ごめんなさい🙏', type: 'personal' },
-            { text: 'たすけて！🆘', type: 'personal' },
-            { text: 'たすけて！🆘', type: 'all' }
-        ];
-
-        messages.forEach(msg => {
-            const btn = document.createElement('button');
-            btn.className = "w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold py-3 px-4 rounded-lg";
-            
-            let btnText = msg.text;
-            if (msg.type === 'all') {
-                btnText = `<i class="fas fa-bullhorn mr-2"></i> ${msg.text} (全員に)`;
-                btn.classList.remove('bg-pink-100', 'hover:bg-pink-200', 'text-pink-800');
-                btn.classList.add('bg-amber-400', 'hover:bg-amber-500', 'text-white');
-            }
-            btn.innerHTML = btnText;
-
-            btn.onclick = () => {
-                const confirmMessage = msg.type === 'all' 
-                    ? `全員に「${msg.text}」と通知します。よろしいですか？`
-                    : `「${msg.text}」を送信します。よろしいですか？`;
-
-                if (confirm(confirmMessage)) {
-                    sendAction('sendMessage', targetUserId, { message: msg.text, type: msg.type });
-                    messageModal.style.display = 'none';
-                    alert(`「${msg.text}」を送信しました！`);
+                if (data.status === 'error') {
+                    throw new Error(data.message || '不明なエラーが発生しました。');
                 }
-            };
-            messageButtons.appendChild(btn);
-        });
-        messageModal.style.display = 'flex';
-    }
 
-    // --- データ送信 ---
-    async function sendData(data) {
-        try {
-            await fetch(GAS_WEB_APP_URL, {
-                method: 'POST', mode: 'no-cors',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams(data)
+                const allParticipants = data;
+
+                if (!Array.isArray(allParticipants)) throw new Error("参加者データの形式が正しくありません。");
+
+                const myProfile = allParticipants.find(p => p.userId === myUserId);
+                if (!myProfile) {
+                    loadingScreen.innerHTML = `<p class="text-red-600">あなたのプロフィールが「参加中」シートに見つかりません。<br>管理者にお問い合わせください。</p>`;
+                    return;
+                }
+                
+                const oppositeGender = myProfile.gender === '男性' ? '女性' : '男性';
+                const oppositeGenderParticipants = allParticipants.filter(p => p.gender === oppositeGender);
+
+                document.getElementById('opposite-gender-title').textContent = `${oppositeGender}メンバー`;
+                document.getElementById('opposite-gender-title').classList.add(oppositeGender === '男性' ? 'text-blue-500' : 'text-pink-500');
+
+                const listElement = document.getElementById('opposite-gender-list');
+                listElement.innerHTML = '';
+                oppositeGenderParticipants.forEach(p => listElement.appendChild(createParticipantCard(p)));
+
+                loadingScreen.style.display = 'none';
+                mainScreen.style.display = 'block';
+            } catch (error) {
+                console.error(error);
+                loadingScreen.innerHTML = `<p class="text-red-500">参加者情報の取得に失敗しました。<br>${error.message}</p>`;
+            }
+        }
+        
+        function createParticipantCard(p) {
+            const template = document.getElementById('participant-card-template');
+            const card = template.content.cloneNode(true);
+            
+            card.querySelector('.profile-name').textContent = p.nickname || '名前未設定';
+            
+            const subInfoParts = [];
+            if (p.age) subInfoParts.push(`${p.age}歳`);
+            if (p.occupation) subInfoParts.push(p.occupation);
+            card.querySelector('.profile-sub-info').textContent = subInfoParts.join(' / ');
+            
+            const hobbyWrapper = card.querySelector('.profile-hobby-wrapper');
+            if (p.hobby) {
+                hobbyWrapper.querySelector('.profile-hobby').textContent = p.hobby;
+                hobbyWrapper.style.display = 'block';
+            }
+
+            const commentWrapper = card.querySelector('.profile-comment-wrapper');
+            if (p.comment) {
+                commentWrapper.querySelector('.profile-comment').textContent = p.comment;
+                commentWrapper.style.display = 'block';
+            }
+            
+            card.querySelector('.like-btn').addEventListener('click', (e) => {
+                e.currentTarget.classList.add('liked');
+                sendAction('like', p.userId);
             });
-        } catch (error) { console.error('データ送信に失敗:', error); }
-    }
-    
-    async function sendAction(action, targetUserId, details = {}) {
-        await sendData({ action, fromUserId: myUserId, targetUserId, ...details });
-    }
+            
+            card.querySelector('.message-btn').addEventListener('click', () => {
+                openMessageModal(p.userId, p.nickname);
+            });
+            
+            return card;
+        }
 
-    // --- 初期化 ---
-    main();
+        // --- モーダル処理 ---
+        function openMessageModal(targetUserId, targetUserName) {
+            const modalTitle = document.getElementById('modal-title');
+            const messageButtons = document.getElementById('message-buttons');
+            modalTitle.textContent = `${targetUserName}さんにメッセージ`;
+            messageButtons.innerHTML = '';
+
+            const messages = [
+                { text: 'おめでとう！🎉', type: 'personal' },
+                { text: 'ありがとう！😊', type: 'personal' },
+                { text: 'すごい！✨', type: 'personal' },
+                { text: 'お話ししたいです！☕', type: 'personal' },
+                { text: 'たのしかった！😆', type: 'personal' },
+                { text: 'ごめんなさい🙏', type: 'personal' },
+                { text: 'たすけて！🆘', type: 'personal' },
+                { text: 'たすけて！🆘', type: 'all' }
+            ];
+
+            messages.forEach(msg => {
+                const btn = document.createElement('button');
+                btn.className = "w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold py-3 px-4 rounded-lg";
+                
+                let btnText = msg.text;
+                if (msg.type === 'all') {
+                    btnText = `<i class="fas fa-bullhorn mr-2"></i> ${msg.text} (全員に)`;
+                    btn.classList.remove('bg-pink-100', 'hover:bg-pink-200', 'text-pink-800');
+                    btn.classList.add('bg-amber-400', 'hover:bg-amber-500', 'text-white');
+                }
+                btn.innerHTML = btnText;
+
+                btn.onclick = () => {
+                    const confirmMessage = msg.type === 'all' 
+                        ? `全員に「${msg.text}」と通知します。よろしいですか？`
+                        : `「${msg.text}」を送信します。よろしいですか？`;
+
+                    if (confirm(confirmMessage)) {
+                        sendAction('sendMessage', targetUserId, { message: msg.text, type: msg.type });
+                        messageModal.style.display = 'none';
+                        alert(`「${msg.text}」を送信しました！`);
+                    }
+                };
+                messageButtons.appendChild(btn);
+            });
+            messageModal.style.display = 'flex';
+        }
+
+        // --- データ送信 ---
+        async function sendData(data) {
+            try {
+                await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST', mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+            } catch (error) { console.error('データ送信に失敗:', error); }
+        }
+        
+        async function sendAction(action, targetUserId, details = {}) {
+            await sendData({ action, fromUserId: myUserId, targetUserId, ...details });
+        }
+
+        // --- 初期化 ---
+        main();
+
+    }); // ★★★ ここで修正は終わりです ★★★
+
 </script>
