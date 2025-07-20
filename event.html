@@ -13,11 +13,19 @@
         const loadingScreen = document.getElementById('loading-screen');
         const mainScreen = document.getElementById('main-screen');
         const messageModal = document.getElementById('message-modal');
+        const modalTitle = document.getElementById('modal-title'); // modal-titleも取得
+        const messageButtons = document.getElementById('message-buttons'); // message-buttonsも取得
+        const modalMessageText = document.getElementById('modal-message-text'); // 新しく追加する要素
         let myUserId = '';
 
         // --- イベントハンドラ ---
-        // DOMContentLoadedの中で実行するので、ボタンは確実に見つかります
-        document.getElementById('modal-close-btn').addEventListener('click', () => messageModal.style.display = 'none');
+        document.getElementById('modal-close-btn').addEventListener('click', () => {
+            messageModal.style.display = 'none';
+            // もしLIFFを閉じたい場合は以下を有効にする
+            // if (liff.isInClient()) {
+            //     liff.closeWindow();
+            // }
+        });
 
         // --- メイン処理 ---
         async function main() {
@@ -50,7 +58,13 @@
 
                 const myProfile = allParticipants.find(p => p.userId === myUserId);
                 if (!myProfile) {
-                    loadingScreen.innerHTML = `<p class="text-red-600">あなたのプロフィールが「参加中」シートに見つかりません。<br>管理者にお問い合わせください。</p>`;
+                    // ここを修正しました
+                    showMessageModal(
+                        'アクセスできません',
+                        'このアプリは現在イベント参加中の方のみご利用いただけます。<br>ご登録状況については、イベント管理者にご確認ください。',
+                        false // ボタンを表示しない
+                    );
+                    loadingScreen.style.display = 'none'; // ロード画面を非表示にする
                     return;
                 }
                 
@@ -107,12 +121,19 @@
             return card;
         }
 
-        // --- モーダル処理 ---
+        // --- メッセージ用モーダル表示関数 ---
+        function showMessageModal(title, message, showButtons = true) {
+            modalTitle.textContent = title;
+            modalMessageText.innerHTML = message; // HTMLとして解釈させる
+            messageButtons.style.display = showButtons ? 'flex' : 'none'; // ボタンの表示/非表示を制御
+            messageModal.style.display = 'flex';
+        }
+
+        // --- メッセージ送信モーダル処理（既存のopenMessageModalを再利用） ---
         function openMessageModal(targetUserId, targetUserName) {
-            const modalTitle = document.getElementById('modal-title');
-            const messageButtons = document.getElementById('message-buttons');
             modalTitle.textContent = `${targetUserName}さんにメッセージ`;
-            messageButtons.innerHTML = '';
+            modalMessageText.textContent = ''; // 通常のメッセージモーダルではメッセージテキストは不要
+            messageButtons.innerHTML = ''; // 既存のボタンをクリア
 
             const messages = [
                 { text: 'おめでとう！🎉', type: 'personal' },
@@ -150,6 +171,7 @@
                 };
                 messageButtons.appendChild(btn);
             });
+            messageButtons.style.display = 'flex'; // ボタンを表示する
             messageModal.style.display = 'flex';
         }
 
