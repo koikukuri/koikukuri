@@ -1,34 +1,40 @@
 <script>
-        const LIFF_ID = "2007667389-LBMOpGMy";
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyxL1IajeIbplhzpkKrfO4XUwpLlnxMbBHRRpXKULPo1IK3xGSkjFPnBPCAJNgxyY8uAQ/exec";
+    const LIFF_ID = "2007667389-LBMOpGMy";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyxL1IajeIbplhzpkKrfO4XUwpLlnxMbBHRRpXKULPo1IK3xGSkjFPnBPCAJNgxyY8uAQ/exec";
 
-        document.addEventListener('DOMContentLoaded', main);
-        async function main() {
-            const loadingEl = document.getElementById('loading');
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login({ redirectUri: window.location.href }); return; }
-                
-                const liffProfile = await liff.getProfile(); // LINEのプロフィールを取得
-                const response = await fetch(`${GAS_URL}?action=verifyUser&userId=${liffProfile.userId}`);
-                if (!response.ok) throw new Error('サーバーとの通信に失敗しました。');
-                
-                const result = await response.json();
-                if (result.status === 'error') throw new Error(result.message || 'このページを閲覧する権限がありません。');
+    document.addEventListener('DOMContentLoaded', main);
+    async function main() {
+        const loadingEl = document.getElementById('loading');
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login({ redirectUri: window.location.href }); return; }
+            
+            const liffProfile = await liff.getProfile();
+            const response = await fetch(`${GAS_URL}?action=verifyUser&userId=${liffProfile.userId}`);
+            if (!response.ok) throw new Error('サーバーとの通信に失敗しました。');
+            
+            const result = await response.json();
+            if (result.status === 'error') throw new Error(result.message || 'このページを閲覧する権限がありません。');
 
-                // ▼▼▼ ここからが変更点 ▼▼▼
-                // GASから返されたデータ（result.data）にニックネームが含まれている
-                const userProfileFromSheet = result.data;
-                const welcomeName = userProfileFromSheet.nickname || liffProfile.displayName; // シートにニックネームがあればそれ、なければLINEの表示名を使う
-
-                document.getElementById('welcome-message').textContent = `${welcomeName}さん、こんにちは！`;
-                // ▲▲▲ ここまでが変更点 ▲▲▲
-
-                loadingEl.classList.add('hidden');
-                document.getElementById('main-content').classList.remove('hidden');
-
-            } catch (err) {
-                loadingEl.innerHTML = `<div class="text-center p-4"><i class="fas fa-exclamation-triangle fa-3x text-red-500 mb-4"></i><p class="font-bold text-red-700">アクセスできません</p><p class="text-gray-600 mt-2">このページはイベント参加者のみ閲覧できます。</p><p class="text-xs text-gray-500 mt-4">エラー: ${err.message}</p></div>`;
+            // ▼▼▼ ここを修正 ▼▼▼
+            // GASから返されたニックネームを直接使うように変更
+            const welcomeName = result.data.nickname; 
+            
+            // もしwelcomeNameが取得できなかった場合のエラーチェックを追加
+            if (!welcomeName) {
+                console.error("GASからニックネームが返されませんでした。データ:", result.data);
+                throw new Error("ニックネームの取得に失敗しました。");
             }
+            // ▲▲▲▲▲▲▲▲▲▲▲▲
+
+            document.getElementById('welcome-message').textContent = `${welcomeName}さん、こんにちは！`;
+
+            loadingEl.classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+
+        } catch (err) {
+            loadingEl.innerHTML = `<div class="text-center p-4"><i class="fas fa-exclamation-triangle fa-3x text-red-500 mb-4"></i><p class="font-bold text-red-700">アクセスできません</p><p class="text-gray-600 mt-2">このページはイベント参加者のみ閲覧できます。</p><p class="text-xs text-gray-500 mt-4">エラー: ${err.message}</p></div>`;
+            console.error("エラーが発生しました:", err);
         }
-    </script>
+    }
+</script>
