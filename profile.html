@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>プロフィール一覧</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style> body { font-family: sans-serif; background-color: #f0f2f5; } </style>
+</head>
+<body class="pb-20">
+    <div id="loading" class="fixed inset-0 bg-white flex items-center justify-center z-50"><p>読み込み中...</p></div>
+    <header class="bg-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
+        <h1 class="text-xl font-bold">プロフィール一覧</h1>
+        <button onclick="goToMyPage()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">マイページへ</button>
+    </header>
+    <main id="profile-list" class="p-4 space-y-4"></main>
+    <div id="modal" class="hidden fixed inset-0 z-40 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6"></div>
+    </div>
+
+    <script>
+        const LIFF_ID = "ここにプロフィール一覧用のLIFF ID";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyxL1IajeIbplhzpkKrfO4XUwpLlnxMbBHRRpXKULPo1IK3xGSkjFPnBPCAJNgxyY8uAQ/exec";
+        const MYPAGE_LIFF_URL = "ここにマイページ用のLIFF URL";
+
+        let myProfile = null;
+        let clearStatusData = null;
+
+        document.addEventListener('DOMContentLoaded', main);
+        async function main() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) { liff.login({ redirectUri: window.location.href }); return; }
+                myProfile = await fetchData('getMyProfile');
+                const participants = await fetchData('getOppositeGenderParticipants', `&gender=${myProfile.gender}`);
+                renderProfiles(participants);
+                document.getElementById('loading').classList.add('hidden');
+            } catch (err) { document.getElementById('loading').textContent = `エラー: ${err.message}`; }
+        }
+
+        function renderProfiles(participants) {
+            const listEl = document.getElementById('profile-list');
+            if (!participants || participants.length === 0) {
+                listEl.innerHTML = `<p class="text-center text-gray-500 mt-8">表示できるプロフィールがありません。</p>`; return;
+            }
+            listEl.innerHTML = participants.map(p => `
+                <div class="bg-white rounded-lg shadow-md p-4">
+                    <div class="flex items-start justify-between">
+                        <div><h3 class="text-xl font-bold text-gray-800">${p.nickname}</h3><p class="text-sm text-gray-500">${p.age}・${p.occupation}</p></div>
+                        <div class="text-white text-xs px-2 py-1 rounded-full ${p.gender === '男性' ? 'bg-blue-500' : 'bg-pink-500'}">${p.gender}</div>
+                    </div>
+                    <p class="text-gray-700 my-3"><strong>趣味:</strong> ${p.hobby}</p>
+                    <p class="text-gray-600 bg-gray-100 p-3 rounded-md">「${p.comment}」</p>
+                    <div class="flex justify-end space-x-2 mt-4">
+                        <button onclick="showClearStatus('${p.userId}', '${p.nickname}')" class="px-3 py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600"><i class="fas fa-trophy mr-1"></i>クリア状況</button>
+                        <button onclick="showSendMessage('${p.userId}')" class="px-3 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"><i class="fas fa-paper-plane mr-1"></i>メッセージ</button>
+                        <button onclick="sendLike(this, '${p.userId}')" class="px-3 py-2 text-sm bg-pink-500 text-white rounded-md hover:bg-pink-600"><i class="fas fa-heart mr-1"></i>いいね</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        async function fetchData(action, params = '') {
+            const liffProfile = await liff.getProfile();
+            const response = await fetch(`${GAS_URL}?action=${action}&userId=${liffProfile.userId}${params}`);
+            if (!response.ok) throw new Error('サーバーとの通信に失敗');
+            const result = await response.json();
+            if (result.status === 'error') throw new Error(result.message);
+            return result.data;
+        }
+
+        async function postData(action, body) {
+            body.fromUserId = myProfile.userId;
+            const response = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(body).toString() });
+            const result = await response.json();
+            if (result.status === 'error') throw new Error(result.message);
+            return result;
+        }
+
+        function goToMyPage() { if (MYPAGE_LIFF_URL.startsWith('http')) { window.location.href = MYPAGE_LIFF_URL; } else { alert('マイページのLIFF URLが設定されていません。'); } }
+        async function sendLike(btn, targetUserId) { btn.disabled = true; try { await postData('like', { targetUserId }); alert('いいねを送信しました！'); btn.innerHTML = '<i class="fas fa-check"></i> 送信済'; } catch (e) { alert(e.message); btn.disabled = false; } }
+        function showSendMessage(targetUserId) {
+            const messages = ["お話しませんか？", "趣味が合いそうですね！", "よろしくお願いします！"];
+            document.getElementById('modal-content').innerHTML = `<h3 class="text-lg font-bold mb-4">メッセージ送信</h3><div class="space-y-2">${messages.map(msg => `<button onclick="confirmSendMessage('${targetUserId}', '${msg}')" class="w-full text-left p-3 bg-gray-100 rounded-md hover:bg-gray-200">${msg}</button>`).join('')}</div><button onclick="closeModal()" class="w-full mt-4 py-2 bg-gray-300 rounded-md">キャンセル</button>`;
+            openModal();
+        }
+        async function confirmSendMessage(targetUserId, message) { closeModal(); try { await postData('sendMessage', { targetUserId, message, type: 'personal' }); alert('メッセージを送信しました！'); } catch (e) { alert(e.message); } }
+        async function showClearStatus(userId, nickname) {
+            if (!clearStatusData) clearStatusData = await fetchData('getClearStatus');
+            const userStatus = clearStatusData[userId];
+            let statusHtml = '<ul class="space-y-1">';
+            if (userStatus && Object.keys(userStatus).length > 0) {
+                for (const riddle in userStatus) { statusHtml += `<li><span class="mr-2">${userStatus[riddle] ? '✅' : '▪️'}</span>${riddle}</li>`; }
+            } else { statusHtml += '<li>クリア情報なし</li>'; }
+            statusHtml += '</ul>';
+            document.getElementById('modal-content').innerHTML = `<h3 class="text-lg font-bold mb-4">${nickname}さんのクリア状況</h3>${statusHtml}<button onclick="closeModal()" class="w-full mt-4 py-2 bg-gray-300 rounded-md">閉じる</button>`;
+            openModal();
+        }
+        function openModal() { document.getElementById('modal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+    </script>
+</body>
+</html>
