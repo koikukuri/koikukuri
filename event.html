@@ -3,160 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>参加者プロフィール</title>
+    <title>メニュー</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        html, body { overscroll-behavior: none; }
-        body {
-            font-family: 'DotGothic16', sans-serif;
-            background-color: #334155;
-            color: #1E293B;
-        }
-        .pixel-container {
-            background-color: #F1F5F9;
-            border: 4px solid #1E293B;
-            box-shadow: 6px 6px 0px #1E293B;
-        }
-        .pixel-btn {
-            background-color: #64748B;
-            color: white;
-            border: 4px solid #1E293B;
-            box-shadow: 2px 2px 0px #1E293B;
-            transition: all 0.1s;
-        }
-        .pixel-btn:active { transform: translate(2px, 2px); box-shadow: none; }
-        .loading-text { color: white; font-size: 1.5rem; }
-        .gender-male { background-color: #60A5FA; }
-        .gender-female { background-color: #F472B6; }
-        .clear-status-list { list-style: none; padding-left: 1rem; }
-        .clear-status-list li { margin-bottom: 0.25rem; }
+        body { font-family: sans-serif; background-color: #f7f8fa; }
+        .menu-button { display: flex; align-items: center; width: 100%; padding: 1.5rem 1rem; background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); text-align: left; transition: transform 0.2s; }
+        .menu-button:active { transform: scale(0.98); }
+        .menu-button .icon { width: 3rem; height: 3rem; margin-right: 1rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 1.5rem; color: white; }
     </style>
 </head>
-<body class="p-4">
-
-    <div id="loading" class="text-center loading-text">よみこみちゅう...</div>
-
-    <div id="main-content" class="hidden">
-        <div class="text-center mb-6">
-            <button id="toggle-status-btn" class="pixel-btn bg-teal-500 py-3 px-6 text-lg">クリア状況をみる</button>
-        </div>
-        <div id="profile-list" class="space-y-6">
-            </div>
+<body>
+    <div id="loading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <p id="loading-text">読み込み中...</p>
     </div>
 
+    <main id="main-content" class="hidden p-4">
+        <header class="text-center mb-6">
+            <h1 id="welcome-message" class="text-2xl font-bold text-gray-800">メニュー</h1>
+            <p class="text-gray-500">何をしますか？</p>
+        </header>
+        <div class="space-y-4">
+            <a href="ここに「プロフィール一覧」のLIFF URL" class="menu-button">
+                <span class="icon bg-blue-500"><i class="fas fa-users"></i></span>
+                <div><h2 class="font-bold text-lg text-gray-900">プロフィール一覧</h2><p class="text-sm text-gray-600">参加者のみんなをチェック</p></div>
+            </a>
+            <a href="ここに「マイページ」のLIFF URL" class="menu-button">
+                <span class="icon bg-green-500"><i class="fas fa-user-circle"></i></span>
+                <div><h2 class="font-bold text-lg text-gray-900">マイページ</h2><p class="text-sm text-gray-600">いいねやメッセージを確認</p></div>
+            </a>
+            <div class="bg-white rounded-lg shadow-md p-4 mt-6">
+                <h2 class="text-xl font-bold mb-4 text-center text-gray-800">謎解きに挑戦！</h2>
+                <div class="grid grid-cols-1 gap-3">
+                    <a href="ここに「じゃんけんの謎」のLIFF URL" class="w-full text-left p-3 bg-indigo-100 text-indigo-800 rounded-md hover:bg-indigo-200 font-semibold flex items-center"><i class="fas fa-puzzle-piece mr-3"></i><span>じゃんけんの謎</span></a>
+                </div>
+            </div>
+        </div>
+    </main>
+
     <script>
-        // ★★★ ご自身の環境に合わせて設定してください ★★★
-        const LIFF_ID = "2007667389-LBMOpGMy"; 
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxL1IajeIbplhzpkKrfO4XUwpLlnxMbBHRRpXKULPo1IK3xGSkjFPnBPCAJNgxyY8uAQ/exec";
+        const LIFF_ID = "ここにメニューページ用のLIFF ID";
+        const GAS_URL = "ここにGASのウェブアプリURL";
 
-        let clearStatusData = null; // クリア状況データを保持する変数
-        let isStatusVisible = false; // クリア状況の表示状態
-
+        document.addEventListener('DOMContentLoaded', main);
         async function main() {
+            const loadingEl = document.getElementById('loading');
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                    return;
-                }
+                if (!liff.isLoggedIn()) { liff.login({ redirectUri: window.location.href }); return; }
                 
                 const profile = await liff.getProfile();
-                
-                // 参加者一覧を取得して表示
-                const participants = await fetchParticipants(profile.userId);
-                renderProfiles(participants);
+                const response = await fetch(`${GAS_URL}?action=verifyUser&userId=${profile.userId}`);
+                if (!response.ok) throw new Error('サーバーとの通信に失敗しました。');
+                const result = await response.json();
+                if (result.status === 'error') throw new Error(result.message || 'このページを閲覧する権限がありません。');
 
-                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('welcome-message').textContent = `${profile.displayName}さん、こんにちは！`;
+                loadingEl.classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
-
             } catch (err) {
-                document.getElementById('loading').textContent = `エラーが発生しました: ${err.message}`;
+                loadingEl.innerHTML = `<div class="text-center p-4"><i class="fas fa-exclamation-triangle fa-3x text-red-500 mb-4"></i><p class="font-bold text-red-700">アクセスできません</p><p class="text-gray-600 mt-2">このページはイベント参加者のみ閲覧できます。</p><p class="text-xs text-gray-500 mt-4">エラー: ${err.message}</p></div>`;
             }
         }
-
-        async function fetchParticipants(userId) {
-            const response = await fetch(`${GAS_WEB_APP_URL}?action=getParticipants&userId=${userId}`);
-            if (!response.ok) throw new Error('参加者リストの取得に失敗しました');
-            return await response.json();
-        }
-
-        function renderProfiles(participants) {
-            const listElement = document.getElementById('profile-list');
-            listElement.innerHTML = ''; // リストをクリア
-            participants.forEach(p => {
-                const genderClass = p.gender === '男性' ? 'gender-male' : 'gender-female';
-                const card = `
-                    <div class="pixel-container p-4" data-user-id="${p.userId}">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-2xl font-bold">${p.nickname}</h3>
-                            <div class="text-white text-sm px-2 py-1 ${genderClass}">${p.gender}・${p.age}</div>
-                        </div>
-                        <div class="space-y-1 text-sm">
-                            <p><strong>職業:</strong> ${p.occupation}</p>
-                            <p><strong>趣味:</strong> ${p.hobby}</p>
-                            <p class="mt-2">「${p.comment}」</p>
-                        </div>
-                        <div class="clear-status mt-3 pt-3 border-t-2 border-slate-400 border-dashed" style="display: none;">
-                            </div>
-                    </div>
-                `;
-                listElement.innerHTML += card;
-            });
-        }
-
-        document.getElementById('toggle-status-btn').addEventListener('click', async (e) => {
-            const btn = e.target;
-            isStatusVisible = !isStatusVisible; // 表示状態を反転
-
-            if (isStatusVisible) {
-                btn.textContent = 'よみこみちゅう...';
-                // まだデータを取得していなければ取得する
-                if (!clearStatusData) {
-                    try {
-                        const profile = await liff.getProfile();
-                        const response = await fetch(`${GAS_WEB_APP_URL}?action=getClearStatus&userId=${profile.userId}`);
-                        if (!response.ok) throw new Error('クリア状況の取得に失敗');
-                        const result = await response.json();
-                        clearStatusData = result.data;
-                    } catch (err) {
-                        alert(err.message);
-                        isStatusVisible = false; // エラー時は状態を元に戻す
-                        btn.textContent = 'クリア状況をみる';
-                        return;
-                    }
-                }
-                
-                // 表示処理
-                document.querySelectorAll('.clear-status').forEach(el => {
-                    const userId = el.closest('[data-user-id]').dataset.userId;
-                    const userStatus = clearStatusData[userId];
-                    let html = '<ul class="clear-status-list">';
-                    if (userStatus && Object.keys(userStatus).length > 0) {
-                        for (const riddleName in userStatus) {
-                            const solved = userStatus[riddleName];
-                            html += `<li>${riddleName}: ${solved ? '✅' : '▪️'}</li>`;
-                        }
-                    } else {
-                        html += '<li>クリア情報なし</li>';
-                    }
-                    html += '</ul>';
-                    el.innerHTML = html;
-                    el.style.display = 'block';
-                });
-                btn.textContent = '状況をかくす';
-
-            } else {
-                // 非表示処理
-                document.querySelectorAll('.clear-status').forEach(el => {
-                    el.style.display = 'none';
-                });
-                btn.textContent = 'クリア状況をみる';
-            }
-        });
-
-        main();
     </script>
 </body>
 </html>
