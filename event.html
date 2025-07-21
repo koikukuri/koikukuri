@@ -45,8 +45,7 @@
 
     <div id="main-screen" class="hidden">
         <h1 id="opposite-gender-title" class="text-2xl font-bold mb-6 text-center"></h1>
-        <div id="opposite-gender-list" class="grid grid-cols-1 gap-4">
-            </div>
+        <div id="opposite-gender-list" class="grid grid-cols-1 gap-4"></div>
     </div>
 
     <template id="participant-card-template">
@@ -75,43 +74,44 @@
     <div id="message-modal" class="message-modal">
         <div class="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md">
             <h3 id="modal-title" class="text-xl font-bold mb-4 text-center"></h3>
-            <div id="message-buttons" class="space-y-3">
-                </div>
+            <div id="message-buttons" class="space-y-3"></div>
             <button id="modal-close-btn" class="mt-6 w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg">
                 閉じる
             </button>
         </div>
     </div>
 
+    <!-- LIFF SDK -->
     <script src="https://static.line-scdn.net/liff/sdk/v2/liff.js"></script>
 
+    <!-- アプリ本体 -->
     <script>
-        // --- 設定 ---
         const LIFF_ID = "2007667389-LBMOpGMy";
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyTjlNyHz5xGe-1XrBzzn5-DF8haB3WUw5ISqfqtcs7p4HRLmrV4oVZ-3PmfBvjkFwAPQ/exec"; // このURLが正しいか再確認
-
-        // --- 要素の取得 ---
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyTjlNyHz5xGe-1XrBzzn5-DF8haB3WUw5ISqfqtcs7p4HRLmrV4oVZ-3PmfBvjkFwAPQ/exec";
         const loadingScreen = document.getElementById('loading-screen');
         const mainScreen = document.getElementById('main-screen');
         const messageModal = document.getElementById('message-modal');
         let myUserId = '';
 
-        // --- メイン処理 ---
         async function main() {
             try {
-                // ここでliffオブジェクトが使える状態になっている必要があります
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login(); return; }
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
                 const profile = await liff.getProfile();
                 myUserId = profile.userId;
                 await showMainScreen();
             } catch (error) {
                 console.error(error);
-                loadingScreen.innerHTML = `<p class="text-red-600 font-bold">LIFFの初期化に失敗しました。</p><p class="text-sm mt-2">LIFF IDまたはエンドポイントURLの設定が間違っている可能性があります。管理者にご確認ください。</p><p class="text-xs mt-4 text-gray-500">エラー詳細: ${error.message}</p>`;
+                loadingScreen.innerHTML = `
+                    <p class="text-red-600 font-bold">LIFFの初期化に失敗しました。</p>
+                    <p class="text-sm mt-2">LIFF IDまたはエンドポイントURLの設定が間違っている可能性があります。</p>
+                    <p class="text-xs mt-4 text-gray-500">エラー詳細: ${error.message}</p>`;
             }
         }
 
-        // --- 画面表示ロジック ---
         async function showMainScreen() {
             try {
                 loadingScreen.style.display = 'flex';
@@ -124,14 +124,13 @@
                 }
 
                 const allParticipants = data;
-
-                if (!Array.isArray(allParticipants)) {
-                    throw new Error("参加者データの形式が正しくありません。");
-                }
+                if (!Array.isArray(allParticipants)) throw new Error("参加者データの形式が正しくありません。");
 
                 const myProfile = allParticipants.find(p => p.userId === myUserId);
                 if (!myProfile) {
-                    loadingScreen.innerHTML = `<p class="text-red-600 font-bold">現在、イベント参加者のみ表示いただけます。</p><p class="text-sm mt-2">このアプリはイベント参加中の方のみがご利用可能です。ご不明な点があれば、管理者にお問い合わせください。</p>`;
+                    loadingScreen.innerHTML = `
+                        <p class="text-red-600 font-bold">現在、イベント参加者のみ表示いただけます。</p>
+                        <p class="text-sm mt-2">このアプリはイベント参加中の方のみがご利用可能です。</p>`;
                     return;
                 }
 
@@ -149,14 +148,16 @@
                 mainScreen.style.display = 'block';
             } catch (error) {
                 console.error(error);
-                loadingScreen.innerHTML = `<p class="text-red-500 font-bold">情報の読み込み中にエラーが発生しました。</p><p class="text-sm mt-2">${error.message}</p><p class="text-xs mt-4 text-gray-500">問題が解決しない場合は、管理者にご連絡ください。</p>`;
+                loadingScreen.innerHTML = `
+                    <p class="text-red-500 font-bold">情報の読み込み中にエラーが発生しました。</p>
+                    <p class="text-sm mt-2">${error.message}</p>
+                    <p class="text-xs mt-4 text-gray-500">問題が解決しない場合は、管理者にご連絡ください。</p>`;
             }
         }
 
         function createParticipantCard(p) {
             const template = document.getElementById('participant-card-template');
             const card = template.content.cloneNode(true);
-
             card.querySelector('.profile-name').textContent = p.nickname || '名前未設定';
 
             const subInfoParts = [];
@@ -188,10 +189,8 @@
             return card;
         }
 
-        // --- イベントハンドラ ---
         document.getElementById('modal-close-btn').addEventListener('click', () => messageModal.style.display = 'none');
 
-        // --- モーダル処理 ---
         function openMessageModal(targetUserId, targetUserName) {
             const modalTitle = document.getElementById('modal-title');
             const messageButtons = document.getElementById('message-buttons');
@@ -237,23 +236,27 @@
             messageModal.style.display = 'flex';
         }
 
-        // --- データ送信 ---
         async function sendData(data) {
             try {
                 await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST', mode: 'no-cors',
+                    method: 'POST',
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams(data)
                 });
-            } catch (error) { console.error('データ送信に失敗:', error); }
+            } catch (error) {
+                console.error('データ送信に失敗:', error);
+            }
         }
 
         async function sendAction(action, targetUserId, details = {}) {
             await sendData({ action, fromUserId: myUserId, targetUserId, ...details });
         }
 
-        // --- 初期化 ---
-        main();
+        // ← 修正ポイント：liffが読み込まれてからmain実行
+        window.addEventListener('DOMContentLoaded', () => {
+            main();
+        });
     </script>
 </body>
 </html>
