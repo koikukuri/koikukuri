@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>よくある質問</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; background: #f9f9f9; }
+    .faq-item { background: #fff; margin-bottom: 1em; padding: 1em; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; }
+    .faq-question { font-weight: bold; }
+    .faq-answer { margin-top: 0.5em; display: none; color: #555; }
+    .faq-item.active .faq-answer { display: block; }
+  </style>
+</head>
+<body>
+  <h1>よくある質問</h1>
+  <div id="faq-container">
+
+    <div class="faq-item">
+      <div class="faq-question">Q. Q.参加に必要なものは何ですか？</div>
+      <div class="faq-answer">A.PC（パソコン）とスマートフォン（またはタブレット）の両方が必須です。イベント中、PC画面に表示されるQRコードをスマートフォンで読み込んで謎を解く場面がありますので、必ず2台の端末をご用意ください。また、安定したインターネット環境と会話のためのマイクも必要です。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Q. Q.参加費はかかりますか？</div>
+      <div class="faq-answer">A.今回はテスト開催にご協力いただくため、参加費は無料です。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Q. Q.イベント時間はどのくらいですか？</div>
+      <div class="faq-answer">A.全体で約2時間を予定しております。謎解きと参加者同士のフリートーク時間をお楽しみいただけます。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Q. Q.謎解きが苦手でも楽しめますか？</div>
+      <div class="faq-answer">A.はい、もちろんです。謎解きはチームで協力して進める形式ですので、謎解きが初めての方や苦手な方でもお楽しみいただけます。コミュニケーションのきっかけとしてお考えください。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Q. Q.イベント後に他の参加者と連絡先を交換できますか？</div>
+      <div class="faq-answer">A.イベント中、参加者の皆様が自由に交流できるフリートークの時間を設けております。連絡先の交換も、その時間内でご自由に行っていただけます。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Q. Q.遅刻や途中退出はできますか？</div>
+      <div class="faq-answer">A.謎解きやチーム分けの都合上、原則として時間通りのご参加をお願いしております。やむを得ず遅れる場合や退出される場合は、お手数ですがこのLINE公式アカウントにご連絡ください。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Q. Q.操作方法などで困ったらどうすれば良いですか？</div>
+      <div class="faq-answer">A.イベントの開始時に基本的な操作方法をご案内します。イベント中にご不明な点やトラブルが発生した場合は、Gather内にいるスタッフにお声がけいただくか、このLINE公式アカウントへお問い合わせください。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Q. Q.参加条件はありますか？</div>
+      <div class="faq-answer">A.成人の独身の方にお願いしております。既婚者の方のご参加はご遠慮ください。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Q. Q.これは正式なサービスですか？</div>
+      <div class="faq-answer">A.現在はサービスの品質向上のためのテスト開発段階です。イベント後に皆様からいただく率直なご意見をもとに、サービスを改善してまいります。</div>
+    </div>
+
+  </div>
+  <script>
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.addEventListener('click', () => item.classList.toggle('active'));
+    });
+  </script>
+</body>
+</html>
