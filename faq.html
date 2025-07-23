@@ -13,22 +13,52 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
+    h1 {
+      text-align: center;
+      margin-bottom: 2em;
+      color: #333;
+    }
     .faq-item {
       background: #fff;
       margin-bottom: 1em;
-      padding: 1em;
+      padding: 1em 1.5em;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       cursor: pointer;
+      transition: box-shadow 0.2s ease-in-out;
+    }
+    .faq-item:hover {
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     .faq-question {
-      /* ↓↓↓ REMOVED: The 'font-weight: bold;' line was removed from here ↓↓↓ */
+      font-weight: bold; /* 質問は少し太字にして目立たせましょう！ */
+      position: relative;
+      padding-right: 20px; /* アイコン分のスペース */
+    }
+    /* ▼ 開閉状態を示すアイコンを追加しました */
+    .faq-question::after {
+        content: '＋';
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        font-weight: bold;
+        color: #007bff;
+    }
+    .faq-item.active .faq-question::after {
+        content: '－';
     }
     .faq-answer {
-      margin-top: 0.5em;
+      margin-top: 0.8em;
       display: none;
       color: #555;
       line-height: 1.7;
+      padding-left: 1.2em; /* Q&Aのインデントを合わせる */
+      border-left: 3px solid #007bff; /* 回答を分かりやすく囲みました */
+      padding: 0.5em 0 0.5em 1em;
+      margin-left: -1.5em; /* 親要素のpaddingを考慮 */
+      margin-right: -1.5em; /* 親要素のpaddingを考慮 */
+      background: #f7faff;
     }
     .faq-item.active .faq-answer {
       display: block;
@@ -41,9 +71,18 @@
 
     <div class="faq-item">
       <div class="faq-question">Q. 参加に必要なものは何ですか？</div>
-      <div class="faq-answer">A. PC（パソコン）とスマートフォン（またはタブレット）の両方が必須です。イベント中、PC画面に表示されるQRコードをスマートフォンで読み込んで謎を解く場面がありますので、必ず2台の端末をご用意ください。また、安定したインターネット環境と会話のためのマイクも必要です。</div>
+      <div class="faq-answer">
+        A. PC（パソコン）と安定したインターネット環境、マイクがあればご参加いただけます。イベント中、よりスムーズに謎解きをお楽しみいただくために、PCの他にスマートフォンをご用意いただくことを強く推奨しています。イベント中、スマートフォンでQRコードを読み込んでいただく場面をご用意しております。
+      </div>
     </div>
-
+    
+    <div class="faq-item">
+        <div class="faq-question">Q. タブレットでも参加できますか？</div>
+        <div class="faq-answer">
+            A. タブレットでのご参加は、操作が不安定になる可能性があるため推奨しておりません。もしタブレットでご参加される場合は、アプリからではなくブラウザからアクセスしてください。アプリがインストールされていると、イベント会場に正常に入れない場合がございます。
+        </div>
+    </div>
+    
     <div class="faq-item">
       <div class="faq-question">Q. 参加費はかかりますか？</div>
       <div class="faq-answer">A. 今回はテスト開催にご協力いただくため、参加費は無料です。</div>
@@ -56,12 +95,12 @@
 
     <div class="faq-item">
       <div class="faq-question">Q. 謎解きが苦手でも楽しめますか？</div>
-      <div class="faq-answer">A. はい、もちろんです。謎解きはチームで協力して進める形式ですので、謎解きが初めての方や苦手な方でもお楽しみいただけます。コミュニケーションのきっかけとしてお考えください。</div>
+      <div class="faq-answer">A. はい、もちろんです。謎解きは他の参加者と協力して進める形式ですので、謎解きが初めての方や苦手な方でもお楽しみいただけます。コミュニケーションのきっかけとしてお考えください。</div>
     </div>
 
     <div class="faq-item">
       <div class="faq-question">Q. イベント後に他の参加者と連絡先を交換できますか？</div>
-      <div class="faq-answer">A. イベント中、参加者の皆様が自由に交流できるフリートークの時間を設けております。連絡先の交換も、その時間内でご自由に行っていただけます。</div>
+      <div class="faq-answer">A. イベント中、参加者の皆様が自由に交流できるフリートークの時間を設けております。連絡先の交換も、その時間内で行っていただけます。</div>
     </div>
 
     <div class="faq-item">
@@ -87,7 +126,11 @@
   </div>
   <script>
     document.querySelectorAll('.faq-item').forEach(item => {
-      item.addEventListener('click', () => item.classList.toggle('active'));
+      // 質問部分だけをクリック対象にすると、回答内のリンクなどがクリックしやすくなりますよ！
+      const question = item.querySelector('.faq-question');
+      question.addEventListener('click', () => {
+        item.classList.toggle('active');
+      });
     });
   </script>
 </body>
